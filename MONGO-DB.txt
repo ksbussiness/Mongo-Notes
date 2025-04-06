@@ -1,0 +1,540 @@
+Normal querying:
+
+..> Retrieve documents that match a condition.
+
+..> Use Case:	Simple data retrieval.
+
+..> it can  not do the Grouping, joining collections, Calculations,  pipeline processing. etc 
+
+..> it is fastest for the  simple taks 
+
+
+Aggregation querying:
+
+..> Process and transform data (e.g., group, sort, project, calculate).
+
+..> Use Case : Complex data processing and analytics.
+
+..> it can do the Grouping, joining collections, Calculations,  pipeline processing. etc 
+
+..> Slower for just basic retrieval
+
+
+
+
+Aggretaion pipeline in the MONGO DB:
+
+
+..> $lookup is used in the aggregation pipeline to perform joins between collections (similar to SQL joins).
+
+..> It brings documents from another collection into your current document based on matching fields.
+
+..> 
+
+the basic syntax is :
+
+{
+  $lookup: {
+    from: "<foreign_collection>",
+    localField: "<local_field>",
+    foreignField: "<foreign_field>",
+    as: "<output_array_field>"
+  }
+}
+
+
+in real :
+
+
+db.COLLIECTION_11.aggregate([
+  {
+    $lookup: {
+      from: "COLLECTION_22",
+      localField: "from the collection_11 filed only",
+      foreignField: "from the collection_22 filed only",
+      as: "customer_info"
+    }
+  }
+])
+
+
+...> It only performs the Left Outer join 
+
+..> we can perfrom the inner join also using the lookup , but :
+
+NOTE :  Use $match after $lookup to filter empty matches
+
+
+Inner join example :
+------------------------ >
+
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "customers",
+      localField: "customer_id",
+      foreignField: "_id",
+      as: "customer_info"
+    }
+  },
+  {
+    $match: {
+      "customer_info": { $ne: [] } // filters only matched (inner join)
+    }
+  }
+])
+
+$UNWIND :  array in to the object.
+..> Genaraly here the customer_info we get in the form of the Array 
+
+..> but to get it in teh form of the object, we need to use the 
+
+..> unwind turns array into object → easier to access like customer_info.name.
+
+
+ex: db.orders.aggregate([
+  {
+    $lookup: {
+      from: "customers",
+      localField: "customer_id",
+      foreignField: "_id",
+      as: "customer_info"
+    }
+  },
+  { $unwind: "$customer_info" }
+])
+
+
+Ex: 
+ {
+    $unwind: {
+      path: "$product_info",   // Field to flatten
+      preserveNullAndEmptyArrays: true  // Keeps docs without matches
+    }
+  }
+
+..> Here need to add the preserveNullAndEmptyArrays. to give even the  empty array also while converting the array in to the object.
+
+
+# addFileds:
+---------------> 
+
+..> After getting the info in the object form then if we want to add any external fields in teh output then we can use the 
+
+
+{
+    $addFields: {
+      total_price: { $multiply: ["$qty", "$product_info.price"] }
+    }
+  },
+
+
+..> after querying we can also do grouping also here:
+
+ {
+    $group: {
+      _id: "$product_info.category",
+      total_sales: { $sum: "$total_price" },
+      total_orders: { $sum: 1 }
+    }
+  }
+
+..> $sum it will add all the prices , and give it to the total_sales : in the category wise:
+
+..> 
+
+
+
+$PROJECT : give which are only required only :
+..> from this output if we need the only the required data then we uses the Project.
+
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "customers",
+      localField: "customer_id",
+      foreignField: "_id",
+      as: "customer_info"
+    }
+  },
+  { $unwind: "$customer_info" },
+  {
+    $project: {
+      item: 1,
+      customer_name: "$customer_info.name",
+      city: "$customer_info.city"
+    }
+  }
+])
+
+
+
+$SIZE : Its finds the size of the particular, field or array.
+
+
+$SIZE EXAmple:
+
+as: "customer_info"
+    }
+  },
+  {
+    $addFields: {
+      has_customer: { $gt: [{ $size: "$customer_info" }, 0] }
+    }
+  }
+
+
+EXample: Join using different field names with let and $expr inside $lookup:
+
+
+let — to pass a variable from the main collection (orders) :
+.> Declares a local variable (order_product_code) using the value from orders.product_code
+
+pipeline-   to filter documents from the products collection
+
+$expr — to perform a condition using fields from both collections
+
+$$	Prefix to refer to let variables inside the pipeline.
+
+
+
+When to use the lookup and localFields and foreignFields:
+
+.> I want to join 2 collections using just one field, and both fields have the same type, and I don’t need any extra filters."
+
+
+But :
+
+You want to match more than one field?
+
+You want to join on fields that have different names or formats?
+
+You want to add filter conditions while joining?
+
+.> "I need full control. I want to join based on multiple fields, or I want to apply filters inside the join."
+
+SYNTAX: 
+------------->: 
+{
+  $lookup: {
+
+    from: "other_collection",
+
+    let: { varName: "$field" },
+
+    pipeline: [],
+
+    as: "joinedData"
+  }
+}
+
+------------->: 
+
+db.COLLECTION_11.Aggregate({
+
+  $lookup: {
+
+    from: "COLLECTION_22",
+    let: { varName: "$COLLECTION_11" },
+    pipeline: [
+      {
+        $match: {
+          $expr: {
+            $eq: ["$COLLECTION_22", "$$varName"]
+          }
+        }
+      }
+    ],
+    as: "joinedData"
+  }
+}
+)
+
+
+...> COMPARING MORE TEHN TWO FILDS BOTH  : 
+
+You want to match not only on product_code = code,
+but also on brand = brand (from both collections).
+
+This can’t be done with localField and foreignField.
+Because they only compare one field at a time.
+
+
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "products",
+      let: {
+        order_code: "$product_code",
+        order_brand: "$brand"
+      },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $and: [
+                { $eq: ["$code", "$$order_code"] },
+                { $eq: ["$brand", "$$order_brand"] }
+              ]
+            }
+          }
+        }
+      ],
+      as: "matched_product"
+    }
+  },
+  {
+    $unwind: "$matched_product"
+  }
+])
+
+
+EX:2
+
+ $match: {
+            $expr: {
+              $and: [
+                { $eq: ["$code", "$$order_code"] },
+                { $eq: ["$brand", "$$order_brand"] },
+                { $eq: ["$in_stock", true] }
+              ]
+            }
+          }
+
+
+
+ex: if we want to match the different fileds:
+------------------------------------------------- >
+
+Blogs :
+----------- >
+
+{
+  _id: 2,
+  title: "React Tutorial",
+  tags: ["JavaScript", "React", "Frontend"]
+}
+
+Categories :
+------------ >
+
+{
+  _id: "c1",
+  name: "MongoDB"
+}
+
+let: { categoryName: "$name" },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $in: ["$$categoryName", "$tags"]
+            }
+          }
+        }
+      ],
+
+
+
+ex: 
+{
+          $match: {
+            $expr: { $eq: ["$product_code", "$$code"] }
+          }
+        },
+        { $sort: { date: -1 } },
+        { $limit: 2 }
+
+
+
+pipeline: [
+        {
+          $match: {
+            $expr: { $eq: ["$product_code", "$$code"] }
+          }
+        },
+        { $sort: { date: -1 } },
+        { $limit: 2 }
+      ],
+
+
+
+
+..> 
+
+	{
+          $group: {
+            _id: null,
+            totalQty: { $sum: "$quantity" }
+          }
+        }
+
+
+..> 
+
+ {
+          $group: {
+            _id: "$product_code",
+            avgRating: { $avg: "$rating" }
+          }
+        }
+
+ex:
+
+pipeline: [
+        { $match: { $expr: { $eq: ["$product_code", "$$code"] } } },
+        { $count: "salesCount" }
+      ],
+      as: "sale_data"
+    }
+
+{
+    $addFields: {
+      salesCount: {
+        $cond: {
+          if: { $gt: [{ $size: "$sale_data" }, 0] },
+          then: { $arrayElemAt: ["$sale_data.salesCount", 0] },
+          else: 0
+        }
+      }
+    }
+
+
+What is $arrayElemAt in MongoDB? :
+
+..> $arrayElemAt is a MongoDB aggregation operator that lets you get a specific item from an array using its index.
+
+> { $arrayElemAt: [ <array>, <index> ] }
+
+<array> = the array you want to pull from
+
+<index> = the position (starting from 0) of the item you want
+
+{ ratings: [4, 5, 3, 2] }
+
+{ $arrayElemAt: ["$ratings", 1] } ➝ 5
+
+
+
+What does $first do in MongoDB Aggregation?
+
+..>  $first is an aggregation operator that returns the first value it encounters within each group created by $group.
+{ $first: "$<field_name>" }
+
+If you're using $sort before $group, then $first gives you the first value after sorting.
+
+ What does $first mean in MongoDB aggregation?
+
+... $first returns the first value from a group of documents — based on the order they are received by the $group stage.
+
+..> If you skip the $sort, then $first will pick a random first document, depending on how MongoDB internally processes them. This may not be what you want.
+
+WHAT >$lookup + $mergeObjects to Combine Embedded Documents :
+
+$replaceRoot	Replaces the entire document with a new merged structure
+$mergeObjects	Combines two objects → here: customerInfo + current order
+
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "customers",
+      localField: "customer_id",
+      foreignField: "_id",
+      as: "customerInfo"
+    }
+  },
+  {
+    $unwind: "$customerInfo"
+  },
+  {
+    $replaceRoot: {
+      newRoot: { $mergeObjects: ["$customerInfo", "$$ROOT"] }
+    }
+  },
+  {
+    $project: {
+      customerInfo: 0,
+      _id: 0
+    }
+  }
+])
+
+
+# What does $replaceRoot with newRoot do?
+
+..> 
+
+
+$replaceRoot is only used inside an aggregation pipeline.
+
+It replaces the current document entirely with the one you specify.
+
+It does NOT modify the original collection in the database.
+
+Part	What it does
+$replaceRoot	Tells MongoDB: “replace this entire document”
+newRoot	The new document structure you want
+$mergeObjects	Combines two objects into one
+["$customerInfo", "$$ROOT"]	Merges customer info first, then current doc
+
+
+
+
+note: This temporarily changes what you see in the output, but your original orders collection stays untouched.
+
+Let’s now understand how MongoDB decides what to keep and what not to keep when we use:
+
+$replaceRoot + $mergeObjects
+
+..> $mergeObjects: [ obj1, obj2 ]
+
+tart with obj1
+
+Then add/overwrite values from obj2
+
+If both have the same key, the value from obj2 will overwrite obj1's value
+
+
+ex:
+{
+  $mergeObjects: [
+    { name: "Rahul", city: "Delhi" },  // from customerInfo
+    { item: "Laptop", city: "Bangalore" } // from original document
+  ]
+}
+
+o/p:
+{
+  name: "Rahul",
+  item: "Laptop",
+  city: "Bangalore"   // This overwrites "Delhi"
+}
+
+Because "city" was present in both → the second one (ROOT) wins.
+
+MongoDB merges both, and:
+
+Keeps all unique fields
+
+If any field names clash, the one from "$$ROOT" wins
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
