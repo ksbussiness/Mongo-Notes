@@ -1,0 +1,1246 @@
+
+https://www.mongodb.com/docs/atlas/atlas-ui/indexes/
+
+
+#) https://www.mongodb.com/resources/basics/databases/database-index
+
+Why use indexing for sorting if we have sort()?
+While the sort() function does arrange data for you, it operates directly on the queried results. Without an index, MongoDB has to scan the entire collection and sort it, which can be slow for large datasets. Indexes come into play here by maintaining data in a pre-sorted order, allowing the database to fetch the sorted results almost instantly. This reduces computational overhead significantly compared to relying solely on sort().
+
+......> Sort operations that use an index often have better performance than blocking sorts.
+
+...> Indexes support efficient execution of queries in MongoDB. Without indexes, MongoDB must scan every document in a collection to return query results.
+
+...> If an appropriate index exists for a query, MongoDB can use the index to limit the number of documents it must inspect.
+
+...> If your application is repeatedly running queries on the same fields, you can create an index on those fields to improve performance.
+
+...> Indexes are special data structures that store a small portion of the collection's data set in an easy-to-traverse form. 
+
+..> MongoDB defines indexes at the collection level and supports indexes on any field or sub-field of the documents in a MongoDB collection.
+
+
+....> MongoDB creates a unique index on the _id field during the creation of a collection. The _id index prevents clients from inserting two documents with the same value for the _id field. You cannot drop this index on the _id field.
+
+...> You cannot rename an index once created. Instead, you must drop and re-create the index with a new name.
+
+...> 
+
+Why does performance decrease with too many indexes?
+...> Each index occupies storage space and needs to be updated whenever you modify or insert new data in the collection. When you have many indexes, these updates become resource-intensive, slowing down write operations (like insert, update, or delete). Additionally, excessive indexes can increase memory usage, potentially straining the system.
+
+
+i have created an index on quantity, in a table, so i need to see what an index, is stored and how quantity data is stored i need to see and how it referencing the collection i need to see, so how do i see it i need the commands
+
+Without Index:
+======================= >
+
+MongoDB scans every document in the collection.
+
+Time complexity: O(n) (linear scan).
+
+With Index:
+======================= > 
+
+MongoDB uses the index to find the document.
+
+Time complexity: O(log n) (B-tree lookup).
+
+
+note: MongoDB stores data and indexes separately on disk.
+
+Both are kept in B-trees, but indexes are optimized for fast lookups.
+
+
+db.apples.createIndex({"quantity": 1});
+
+
+:TO SEE HOW AN INDEX WAS CREATE AND USED IN THE QUERY EXECUTIONl:
+
+db.apples.find({quantity: <value>}).explain("executionStats");
+
+I GOT THE THIS:
+
+{
+  explainVersion: '1',
+  queryPlanner: {
+    namespace: 'role.apples',
+    parsedQuery: {
+      quantity: {
+        '$eq': 10
+      }
+    },
+    indexFilterSet: false,
+    planCacheShapeHash: 'AA4D0F4E',
+    planCacheKey: 'F37FBE38',
+    optimizationTimeMillis: 0,
+    maxIndexedOrSolutionsReached: false,
+    maxIndexedAndSolutionsReached: false,
+    maxScansToExplodeReached: false,
+    prunedSimilarIndexes: false,
+    winningPlan: {
+      isCached: false,
+      stage: 'FETCH',
+      inputStage: {
+        stage: 'IXSCAN',
+        keyPattern: {
+          quantity: 1
+        },
+        indexName: 'quantity_1',
+        isMultiKey: false,
+        multiKeyPaths: {
+          quantity: []
+        },
+        isUnique: false,
+        isSparse: false,
+        isPartial: false,
+        indexVersion: 2,
+        direction: 'forward',
+        indexBounds: {
+          quantity: [
+            '[10, 10]'
+          ]
+        }
+      }
+    },
+    rejectedPlans: []
+  },
+  executionStats: {
+    executionSuccess: true,
+    nReturned: 2,
+    executionTimeMillis: 16,
+    totalKeysExamined: 2,
+    totalDocsExamined: 2,
+    executionStages: {
+      isCached: false,
+      stage: 'FETCH',
+      nReturned: 2,
+      executionTimeMillisEstimate: 0,
+      works: 3,
+      advanced: 2,
+      needTime: 0,
+      needYield: 0,
+      saveState: 0,
+      restoreState: 0,
+      isEOF: 1,
+      docsExamined: 2,
+      alreadyHasObj: 0,
+      inputStage: {
+        stage: 'IXSCAN',
+        nReturned: 2,
+        executionTimeMillisEstimate: 0,
+        works: 3,
+        advanced: 2,
+        needTime: 0,
+        needYield: 0,
+        saveState: 0,
+        restoreState: 0,
+        isEOF: 1,
+        keyPattern: {
+          quantity: 1
+        },
+        indexName: 'quantity_1',
+        isMultiKey: false,
+        multiKeyPaths: {
+          quantity: []
+        },
+        isUnique: false,
+        isSparse: false,
+        isPartial: false,
+        indexVersion: 2,
+        direction: 'forward',
+        indexBounds: {
+          quantity: [
+            '[10, 10]'
+          ]
+        },
+        keysExamined: 2,
+        seeks: 1,
+        dupsTested: 0,
+        dupsDropped: 0
+      }
+    }
+  },
+  queryShapeHash: '532FD04F9A4209733414D3F4C4B7D2D7D6F07629AE22DA2256CC221DAB8A3145',
+  command: {
+    find: 'apples',
+    filter: {
+      quantity: 10
+    },
+    '$db': 'role'
+  },
+  serverInfo: {
+    host: 'DESKTOP-BDT26P6',
+    port: 27017,
+    version: '8.0.4',
+    gitVersion: 'bc35ab4305d9920d9d0491c1c9ef9b72383d31f9'
+  },
+  serverParameters: {
+    internalQueryFacetBufferSizeBytes: 104857600,
+    internalQueryFacetMaxOutputDocSizeBytes: 104857600,
+    internalLookupStageIntermediateDocumentMaxSizeBytes: 104857600,
+    internalDocumentSourceGroupMaxMemoryBytes: 104857600,
+    internalQueryMaxBlockingSortMemoryUsageBytes: 104857600,
+    internalQueryProhibitBlockingMergeOnMongoS: 0,
+    internalQueryMaxAddToSetBytes: 104857600,
+    internalDocumentSourceSetWindowFieldsMaxMemoryBytes: 104857600,
+    internalQueryFrameworkControl: 'trySbeRestricted',
+    internalQueryPlannerIgnoreIndexWithCollationForRegex: 1
+  },
+  ok: 1
+}
+
+
+...>:
+
+Key Sections in the Output:
+Query Planner:
+
+Namespace: The database and collection you're querying (role.apples).
+
+Parsed Query: Shows the condition you're querying for, in this case, quantity = 10.
+
+Winning Plan:
+
+Stage: The plan used to fetch the results. Here, the main stage is FETCH, meaning it retrieves documents from the collection.
+
+Input Stage: It uses an index scan (IXSCAN) on the quantity_1 index to efficiently filter results.
+
+Index Name: The name of the index used (quantity_1).
+
+Index Bounds: Specifies the range of values used in the index search ([10, 10] means it is looking for an exact match).
+
+Execution Stats:
+
+Total Keys Examined: How many index entries were checked (2 in this case).
+
+Total Docs Examined: How many documents were read from the collection (2 documents matched the query).
+
+Execution Time: Time taken to execute the query (16 milliseconds).
+
+Server Info:
+
+Details about the MongoDB server, such as the host, port, version, and Git version.
+
+How It Works:
+Your query { quantity: 10 } was executed using the quantity_1 index.
+
+The IXSCAN stage means the query leveraged the index to find matching keys (quantity: 10).
+
+After filtering the matching keys, the FETCH stage retrieved the full documents corresponding to those keys.
+
+Important Details:
+nReturned: The number of documents returned by the query (2).
+
+isMultiKey: Indicates whether the index is on fields containing arrays; here it's false, meaning no arrays are involved.
+
+Keys Examined: The number of index keys checked to find the result (2).
+
+
+
+
+
+NOTE:
+********
+...> Indexes occupy additional disk space.
+
+...> When you query, MongoDB checks the index first, locates the document’s position in the collection, and fetches the document from disk.
+
+
+Does MongoDB Re-sort the Data When You Create an Index ?
+------------------------------------------------------------ >
+
+.> Does not sort the original collection.
+
+.> It creates a separate sorted index that references the documents.
+
+.> The original data remains unsorted, but the index is sorted.
+
+.> When you insert data, MongoDB saves the data to disk.
+
+.> If an index is created, MongoDB maintains a separate sorted copy of the indexed field.
+
+.> This index allows MongoDB to locate data quickly without scanning the entire collection.
+
+.> Queries using the indexed field are much faster than those without an index.  
+
+
+Indexes enhance read performance (queries, sorting, filtering).
+
+
+
+
+
+
+When an index is created in a database, it doesn’t save the complete sorted data of the original collection. Instead, it stores only the values of the indexed field(s) in a sorted structure, such as a B-tree or a hash table, depending on the database system. This structure includes pointers (or references) to the actual records in the original collection.
+
+Here’s what happens exactly:
+
+Sorting and Storage of Index Field: The database organizes the values of the indexed field(s) in a sorted or hashed format, depending on the index type. These values act as keys.
+
+Reference to Original Collection: Each key (value of the index field) in the index structure points to the corresponding record in the original collection, allowing for faster lookups.
+
+Query Optimization: When a query is executed that involves the indexed field(s), the database uses the index to directly locate the relevant records instead of scanning the entire collection, significantly improving performance.
+
+Indexes enhance query speed but come with trade-offs, such as additional storage requirements for the index and potential slowdowns during data modifications (insert, update, delete), as the index also needs to be updated.
+
+
+EX :
+In MongoDB, an index works by storing the values of the indexed fields in a sorted structure along with references to the original documents in the collection. This allows MongoDB to quickly locate the documents that match a query condition. Here's a breakdown of how it works with a simple example:
+
+How Indexing Works in MongoDB
+What It Stores:
+
+The values of the indexed field(s), stored in a sorted order.
+
+Pointers (or references) to the actual documents in the collection.
+
+How It Refers to the Original Collection:
+
+Each indexed value is associated with a pointer to the corresponding document's location in the collection. MongoDB uses these pointers to fetch the original documents when needed.
+
+Example:
+Let's say you have a collection of documents called users:
+
+{
+  "_id": 1,
+  "name": "Alice",
+  "age": 25
+}
+{
+  "_id": 2,
+  "name": "Bob",
+  "age": 30
+}
+{
+  "_id": 3,
+  "name": "Charlie",
+  "age": 35
+}
+
+
+db.users.createIndex({ age: 1 })
+
+
+The index will store:
+
+Sorted age values: [25, 30, 35].
+
+References to the original documents based on their _id.
+
+For example, the index structure may look like this:
+
+For example, the index structure may look like this:
+
+25 -> Document with _id: 1
+30 -> Document with _id: 2
+35 -> Document with _id: 3
+
+
+
+Query Without Index:
+If you run a query like:
+
+
+db.users.find({ age: 30 })
+
+
+Without an index, MongoDB would scan the entire collection, checking each document's age field.
+
+Query With Index:
+With the age index, MongoDB will directly look up the value 30 in the index, find the pointer to the corresponding document, and retrieve it. This is much faster.
+
+Indexes are very useful for optimizing queries, but keep in mind that they come with some trade-offs, such as additional storage requirements and the need to update the index during write operations (insert, update, delete).
+
+
+When you modify a document in MongoDB (be it inserting, updating, or deleting), you do not have to manually update the index. MongoDB automatically handles the index updates for you. This means:
+
+Inserting a New Document: If you add a new document to the collection, any indexed fields in that document will automatically be added to the index.
+
+Updating an Indexed Field: If you update the value of an indexed field in an existing document, MongoDB will modify the index to reflect the new value.
+
+Deleting a Document: When you delete a document, MongoDB will also remove its corresponding entry from the index.
+
+So, there is no need for you to manually manage the index. However, do keep the following in mind:
+
+Trade-offs: Indexes come with storage overhead and can slow down write operations slightly since MongoDB has to update the index with every write (insert, update, delete).
+
+Index Maintenance: While MongoDB does the heavy lifting, you should periodically review and optimize your indexes to ensure they're still relevant and efficient for your queries.
+
+
+ 
+
+
+db.schools.createIndex( { "location.state": 1 } )
+
+{
+  "_id": ObjectId("570c04a4ad233577f97dc459"),
+  "studentsEnrolled": 1034,
+  "location": { state: "NY", city: "New York" }
+}
+
+
+db.schools.insertMany([ 
+
+{"studentsEnrolled":11,"location":{"state":"Tel","city":"hyd"}},
+
+{"studentsEnrolled":22,"location":{"state":"Tel","city":"waran"}},
+
+{"studentsEnrolled":33,"location":{"state":"up","city":"prayag"}},
+
+{"studentsEnrolled":44,"location":{"state":"up","city":"luck"}},
+
+
+{"studentsEnrolled":55,"location":{"state":"guj","city":"amc"}},
+
+{"studentsEnrolled":66,"location":{"state":"guj","city":"som"}},
+
+{"studentsEnrolled":77,"location":{"state":"guj","city":"gandhi"}}
+
+ ])
+
+
+
+...> Indexes on embedded fields allow you to use a "dot notation," to introspect into embedded documents.
+
+Create an Index on an Embedded Field :
+
+db.schools.createIndex( { "location.state": 1 } )
+
+db.schools.find({ "location.state":"guj" })
+
+db.schools.find({ "location.city":"gandhi", "location.state":"guj" })
+
+
+...> When you create an index on an embedded document, only queries that specify the entire embedded document use the index.
+
+...> Queries on a specific field within the document do not use the index.
+
+
+
+Create an Index on an Embedded Document :
+
+when we have the data like this :
+
+( [
+   {
+      "name": "Alice",
+      "gpa": 3.6,
+      "location": { city: "Sacramento", state: "California" }
+   },
+   {
+      "name": "Bob",
+      "gpa": 3.2,
+      "location": { city: "Albany", state: "New York" }
+   }
+] )
+
+.> You can create indexes on embedded documents as a whole.
+
+@ Create an index on the location field:
+db.students.createIndex( { location: 1 } )
+
+# The following query uses the index on the location field:
+db.students.find( { location: { city: "Sacramento", state: "California" } } )
+
+.> here we created the index on the complete Location field
+
+
+NOTE:
+..> The following queries do not use the index on the location field because they query on specific fields within the embedded document:
+
+db.students.find( { "location.city": "Sacramento" } )
+db.students.find( { "location.state": "New York" } )
+
+
+
+While retriving the data the order also must important thing to consider:
+
+.> These queries does not give any results
+
+db.students.find( { location: { state: "California", city: "Sacramento" } } );
+..> here this will not give any results here because , the order is wrong here , first we need add the city name then next we need to add the state.
+
+
+Creating the index based on the embeded fields:
+
+db.students.createIndex( { "location.state": 1 } )
+
+The index supports queries on the field location.state, such as the following:
+db.students.find( { "location.state": "California" } )
+
+db.students.find( { "location.city": "Albany", "location.state": "New York" } );
+
+** Here also the order is important to mantain:
+
+index on the array object:
+
+
+"stock": [ {"size": "small","quantity": 8}, {"size": "large","quantity": 10 } ]
+        
+The following operation creates an ascending multikey index on the stock.quantity field of the inventory collection:
+db.inventory.createIndex( { "stock.quantity": 1 } )
+
+
+
+Because stock contains an array value, MongoDB stores this index as a multikey index.
+
+Results
+The index contains a key for each individual value that appears in the stock.quantity field. The index is ascending, meaning the keys are stored in this order: [ 1, 4, 6, 7, 8, 10 ].
+
+The index supports queries that select on the stock.quantity field. For example, the following query returns documents where at least one element in the stock array has a quantity less than 5:
+
+db.inventory.find( {"stock.quantity": { $lt: 5 } })
+
+
+
+Index properties:
+-------------------- >
+
+############ TTL :
+...> TTL indexes are special single-field indexes that MongoDB can use to automatically remove documents from a collection after a certain amount of time or at a specific clock time.
+
+
+...> Use the expireAfterSeconds option to specify a TTL value in seconds.
+
+...> to create a TTL index on the lastModifiedDate field of the eventlog collection, with a TTL value of 3600 seconds:
+
+...> db.eventlog.createIndex( { "lastModifiedDate": 1 }, { expireAfterSeconds: 3600 } )
+
+
+...> If the field is an array, and there are multiple date values in the index, MongoDB uses lowest (i.e. earliest) date value in the array to calculate the expiration threshold.
+
+...> If the indexed field in a document is not a date or an array that holds one or more date values, the document will not expire.
+
+...> MongoDB begins removing expired documents as soon as the index finishes building on the primary.
+
+...> The TTL index does not guarantee that expired data will be deleted immediately upon expiration. There may be a delay between the time that a document expires and the time that MongoDB removes the document from the database.
+
+...>  Compound indexes do not support TTL and ignore the expireAfterSeconds option.
+
+...> The _id field does not support TTL indexes.
+
+...> 
+
+
+TTL index property :
+
+...> Use the expireAfterSeconds option to specify a TTL value in seconds.
+
+...> The TTL index is a single field index. Compound indexes do not support the TTL property
+
+Expire Documents with Filter Conditions :
+
+
+
+db.schools.createIndex(
+
+{ "Location":1},
+
+{
+
+name: "Partial Filter Index",
+
+partialFilterExpression: { "location.state":"guj" },
+
+expireAfterSeconds:10
+
+}
+
+)
+
+here for this matched condition : partialFilterExpression: { "location.state":"guj" },
+
+############ UNIQUE :
+....> A unique index ensures that the indexed fields do not store duplicate values; i.e. enforces uniqueness for the indexed fields. 
+..> By default, MongoDB creates a unique index on the _id field during the creation of a collection.
+
+
+
+
+....> To create the new Index we use the :
+
+db.schools.createIndex( { "user_id": 1 }, { unique: true } ) unique index on single field
+
+...> we can also create the unique compound index on the db like :
+
+db.schools.createIndex( { groupNumber: 1, lastname: 1, firstname: 1 }, { unique: true } ) unique index on multiple fields.
+
+
+...> 
+
+
+#) : Prepare the index to be converted to a unique index
+
+To convert a non-unique index to a unique index, use the collMod command. The collMod command provides options to verify that your indexed field contains unique values before you complete the conversion.
+
+db.apples.insertMany( [
+   { type: "Delicious", quantity: 12 },
+   { type: "Macintosh", quantity: 13 },
+   { type: "Delicious", quantity: 13 },
+   { type: "Fuji", quantity: 15 },
+   { type: "Washington", quantity: 10 }
+] )
+
+....>  db.apples.createIndex( { type: 1 } )
+
+db.runCommand( {
+   collMod: "apples",
+   index: {
+      keyPattern: { type: 1 },
+      prepareUnique: true
+   }
+} )
+
+here this is nothing but making an filed to have only the unique values inside that particular field;
+
+...> 
+
+db.runCommand( {collMod:"apples", index:{keyPattern:{type:1}, prepareUnique:true }}) after runnin this command iam getting this in below 
+
+{ prepareUnique_old: false, prepareUnique_new: true, ok: 1 } , here explain me detailly what happening here
+
+...> Collation : it is nothing but to make the case sensitive indexes.
+
+############ hide an index:
+
+db.addresses.createIndex( { borough: 1 }, { hidden: true } );
+
+...> Create an index without hiding: 
+
+db.restaurants.createIndex( { borough: 1, ratings: 1 } );
+
+...> Hide the index:
+db.restaurants.hideIndex( { borough: 1, ratings: 1 } ); // Specify the index key specification document
+
+
+############ PARTIAL INDEX :
+
+...> Partial indexes only index the documents in a collection that meet a specified filter expression. 
+
+...> To create a partial index, use the db.collection.createIndex() method with the partialFilterExpression option.
+
+
+db.restaurants.createIndex(
+
+{ cuisine:1,name:1 },
+
+{partialFilterExpression: {rating: {$gt:5 }} }
+
+)
+
+==================================================================== >
+
+  
+
+db.user.insertMany([
+
+{
+"username":"Sachin",
+"phone":"123",
+"groupname":"csk"
+},
+
+{
+"username":"rahul",
+"phone":"345",
+"groupname":"csk"
+},
+
+{
+"username":"raju",
+"phone":"123",
+"groupname":"csk"
+},
+
+{
+"username":"sanju",
+"phone":"789",
+"groupname":"mi"
+},
+
+{
+"username":"rohit",
+"phone":"645",
+"groupname":"mi"
+},
+
+{
+"username":"malinga",
+"phone":"7645",
+"groupname":"mi"
+},
+
+
+{
+"username":"hardik",
+"phone":"6373",
+"groupname":"gt"
+},
+
+
+{
+"username":"ashish",
+"phone":"809",
+"groupname":"gt"
+},
+
+{
+"username":"steve smith",
+"phone":"6758",
+"groupname":"gt"
+},
+
+])
+
+
+
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+COMPOUND INDEXING:
+-------------------- >
+
+
+...> Compound indexes collect and sort data from two or more fields in each document in a collection. Data is grouped by the first field in the index and then by each subsequent field.
+
+
+NOTE:
+*********
+...> The order of the indexed fields impacts the effectiveness of a compound index.
+...>  Compound indexes contain references to documents according to the order of the fields in the index.
+...> A single compound index can contain up to 32 fields.
+
+...> Index Prefixes { The only FIRST FILED WHEN CREATING THE INDEX IS called the index prefix }.
+
+.> Index prefixes are the beginning subsets of indexed fields. 
+.> Compound indexes support queries on all fields included in the index prefix.
+
+
+
+
+What are Index Prefixes? Indexes in databases help speed up searches. When we talk about index prefixes, we're referring to the beginning sections (or subsets) of fields in a compound index. A compound index is made up of multiple fields.
+
+For example, consider the compound index: { "item": 1, "location": 1, "stock": 1 } Here, we have three fields: item, location, and stock.
+
+An index prefix is formed by the beginning portion of these fields:
+
+{ "item": 1 } (just the first field)
+
+{ "item": 1, "location": 1 } (the first two fields)
+
+How MongoDB uses Index Prefixes MongoDB is smart—it can use the compound index to run queries on the fields that match the index prefixes. So, with the example index above, MongoDB can efficiently handle queries that include:
+
+Only item
+
+Both item and location
+
+All three fields: item, location, and stock
+
+What happens if a query skips an index prefix? Indexes are ordered, meaning they follow a strict sequence. If you skip the first field (item in this case), MongoDB won't be able to use the compound index effectively for your query. For example:
+
+Queries on location or stock alone won’t work with this compound index because they don’t include the prefix field item.
+
+Queries on location and stock also won’t work because the prefix (item) is missing.
+
+Special Case: Queries on Non-Consecutive Fields Let's say you want to query item and stock. MongoDB can use the index for this query because it includes the prefix (item). However, it won’t be able to optimize for the stock field since it comes after location, which is skipped.
+
+Tip: Remove Redundant Indexes If you have both a compound index (e.g., { a: 1, b: 1 }) and a prefix index (e.g., { a: 1 }), MongoDB can already use the compound index in the same situations as the prefix index. So, unless your prefix index has special constraints (like sparse or unique rules), you can remove it to save space.
+
+...> for a sort operation to use an index, the fields specified in the sort must appear in the same order that they appear in an index. 
+
+NOTE: In compound index , the order of the fields and their functionality must same in the sort functions and also in the index for better performance.
+
+MULTIKEY INDEXING :
+---------------------- >
+
+
+..> Multikey indexes collect and sort data from fields containing array values.
+..>  Multikey indexes improve performance for queries on array fields.
+
+EX:
+
+db.students.insertMany( [
+   {
+      "name": "Andre Robinson",
+      "test_scores": [ 88, 97 ]
+   },
+   {
+      "name": "Wei Zhang",
+      "test_scores": [ 62, 73 ]
+   },
+   {
+      "name": "Jacob Meyer",
+      "test_scores": [ 92, 89 ]
+   }
+] )
+
+
+.> You regularly run a query that returns students with at least one test_score greater than 90. You can create an index on the test_scores field to improve performance for this query.
+
+
+The following operation creates an ascending multikey index on the test_scores field of the students collection:
+
+db.students.createIndex( { test_scores: 1 } )
+
+Results
+The index contains a key for each individual value that appears in the test_scores field. The index is ascending, meaning the keys are stored in this order: [ 62, 73, 88, 89, 92, 97 ].
+
+The index supports queries that select on the test_scores field. For example, the following query returns documents where at least one element in the test_scores array is greater than 90:
+
+db.students.find(
+   {
+      test_scores: { $elemMatch: { $gt: 90 } }
+   }
+)
+
+
+Embedded multi key array :
+
+...> The following operation creates an ascending multikey index on the stock.quantity field of the inventory collection:
+
+db.inventory.createIndex( { "stock.quantity": 1 } )
+
+
+ex:
+db.students.insertMany(
+   [
+      { _id: 1, name: "Shawn", grades: [ 70, 85 ] },
+      { _id: 2, item: "Elena", grades: [ 92, 84 ] }
+   ]
+)
+
+
+Create a multikey index on the grades array:
+
+db.students.createIndex( { grades: 1 } )
+
+
+db.students.find( { grades : { $elemMatch: { $gte: 90, $lte: 99 } } } )
+
+
+
+
+DATE: 08-04-2025:
+------------------ >
+
+
+use of the $currentOP:
+
+..> In MongoDB, the $currentOp is used to get information about operations currently running on the database.
+
+
+..> When checking if an index is being built, $currentOp can help you monitor the indexing process. 
+
+..>Index creation in MongoDB can sometimes be a long-running task, and this command gives insight into whether the process is active and its progress.
+
+For example, you can run $currentOp to identify operations in the "active" state and look for one associated with index creation. This can be particularly useful for diagnosing performance issues or understanding resource utilization during the index-building process.
+
+
+
+ex:
+
+db.getSiblingDB("admin").aggregate( [
+   { $currentOp : { idleConnections: true } },
+   { $match : {"command.createIndexes": { $exists: true } } }
+] )
+
+
+
+
+CRETION OF AN INDEX USING SPECIFIC NAME:
+
+..> When you create an index, you can give the index a custom name. Giving your index a name helps distinguish different indexes on your collection.
+
+
+db.<collection>.createIndex(
+   { <field>: <value> },
+   { name: "<indexName>" }
+)
+
+
+Before you specify an index name, consider the following:
+
+Index names must be unique. Creating an index with the name of an existing index returns an error.
+
+You can't rename an existing index. Instead, you must drop and recreate the index with a new name.
+
+Default Index Names
+If you don't specify a name during index creation, the system generates the name by concatenating each index key field and value with underscores.
+
+
+..>
+
+Drop an Index
+You can remove a specific index from a collection.
+
+
+
+db.collection.dropIndex() ---> : Drops a specific index from the collection.
+
+db.collection.dropIndexes()  ---> : Drops all removable indexes from the collection or an array of indexes, if specified.
+
+
+
+To drop an index, you need its name. To get all index names for a collection, run the getIndexes() method:
+db.<collection>.getIndexes()
+
+
+Drop a Single Index :
+
+..> To drop a specific index, use the dropIndex() method and specify the index name
+db.<collection>.dropIndex("<indexName>")
+
+Drop Multiple Indexes :
+
+..> To drop multiple indexes, use the dropIndexes() method and specify an array of index names
+db.<collection>.dropIndexes( [ "<index1>", "<index2>", "<index3>" ] )
+
+Drop All Indexes Except the _id Index :
+
+..> To drop all indexes except the _id index, use the dropIndexes() method
+db.<collection>.dropIndexes()
+
+
+
+TYPES:
+----------- >
+
+Single
+Compound
+Multikey
+Wildcard
+Geospatial
+Hashed
+
+..>  Different index types support different types of data and queries.
+
+
+i have the products collection, :
+in which i have different types of data stored:
+like :String, number, Array, nested query, so can i create the different indexs on this single table, like single, multikey, compund, hasged ect
+
+Yes, you can create different types of indexes on a single collection in most modern databases, such as MongoDB or similar NoSQL databases. Here's how it works for the mentioned index types:
+
+Single Field Index: You can create an index on a single field, such as a String, Number, or any other type of field in your collection. For example, indexing a name field will make searches on this field much faster.
+
+Compound Index: This is an index on multiple fields in the collection. It's useful when you frequently query using a combination of fields, such as name and price. The order of the fields matters, so design the compound index based on your most frequent query patterns.
+
+Multikey Index: When you have fields that store arrays, a multikey index automatically indexes each element of the array, allowing efficient querying of array values. For example, if your document includes an array of tags, a multikey index can be created for that array.
+
+Hashed Index: You can use hashed indexes on fields that have a high level of uniqueness and are used for equality queries. For instance, this could be beneficial for fields like _id or other unique identifiers.
+
+Wildcard Index: If your collection has fields with dynamic or varying names, you can use wildcard indexes to index all fields or a subset of fields dynamically.
+
+Key Considerations
+Index Limitations: Be mindful of the number of indexes you create, as excessive indexing can lead to performance overhead on write operations.
+
+Index Design: Understand your query patterns before designing indexes. Tailor the types of indexes to optimize the performance of the most common queries.
+
+Nested Fields: For fields within embedded or nested documents, you can create indexes using dot notation. For example you might index address.city.
+
+
+
+TEXT INDEX :
+---------------- >
+
+Text Indexes on Self-Managed Deployments
+
+..> Text indexes support text search queries on fields that contain string content. Text indexes improve performance when you search for specific words or strings within string content.
+
+
+*****
+NOTE: A collection can only have one text index, but that index may include multiple fields.
+
+NOTE : If an existing or newly inserted document lacks a text index field (or the field is null or an empty array), MongoDB does not add a text index entry for the document.
+
+..> 
+
+db.<collection>.createIndex(
+   {
+      <field1>: "text",
+      <field2>: "text",
+      ...
+   }
+)
+
+
+..> ext Index Can't Cover a Query: Text indexes in MongoDB are designed for full-text search and are only used to match specific text query operators, such as $text. They cannot cover queries that require retrieving fields other than the indexed text field. Essentially, they cannot "cover" the entire query like other index types can.
+
+
+..> Sparse Property of Text Index: A sparse index in MongoDB only includes documents that contain the indexed field with a non-null value. Text indexes are always sparse by default. This means that if a field doesn't exist or has a null value in a document, that document will not be included in the text index. MongoDB automatically enforces this behavior for text indexes, even if you don't explicitly specify the sparse option while creating the index.
+
+
+
+example of the text index:
+
+Suppose you have a products collection, and you want to create a text index on the description field for full-text search. Here's how you can work with these points:
+
+db.products.createIndex({ description: "text" });
+
+db.products.insertMany([
+  { name: "Laptop", description: "High performance laptop for gaming and work" },
+  { name: "Keyboard", description: "Mechanical keyboard with RGB lighting" },
+  { name: "Mouse", description: null },
+  { name: "Monitor" }
+]);
+
+
+
+Notice that the third document has description: null, and the fourth document doesn't have a description field.
+
+Step 2: Query Using the Text Index
+
+db.products.find({ $text: { $search: "laptop" } });
+
+
+This query uses the text index to find documents where the word "laptop" appears in the description field.
+
+Sparse Behavior:
+The text index will not include the third and fourth documents because their description field is null or doesn't exist. This demonstrates the sparse property of text indexes.
+
+
+Use Cases
+Documents in an online shop's clothing collection include a description field that contains a string of text describing each item. To find clothes made of silk, create a text index on the description field and run a $text query for documents with the keyword silk. The search returns all documents that mention silk in the description field.
+
+
+
+
+
+MEASURE USAGE :
+
+..> To return a list of all indexes on a collection, use the db.collection.getIndexes()
+
+
+List All Indexes for a Database
+To list all the collection indexes in a database, run the following command in mongosh:
+
+db.getCollectionNames().forEach(function(collection) {
+    indexes = db[collection].getIndexes();
+    print("Indexes for " + collection + ":");
+    printjson(indexes);
+});
+
+
+..> Get Index Access Information with $indexStats
+
+..> Use the $indexStats aggregation stage to get statistics regarding the use of each index for a collection.
+
+@ db.orders.aggregate( [ { $indexStats: { } } ] )
+
+Restrictions
+$indexStats must be the first stage in an aggregation pipeline.
+
+$indexStats is not allowed in transactions.
+
+
+Control Index Use with hint():
+
+..> To force MongoDB to use a particular index for a db.collection.find() operation, specify the index with the hint() method. Append the hint() method to the find() method.
+
+
+db.people.find(
+   { name: "John Doe", zipcode: { $gt: "63000" } }
+).hint( { zipcode: 1 } )
+
+
+
+
+
+
+
+
+WILD CARD INDEXS:
+
+
+..> db.collection.createIndex( { "$**": <sortOrder> } )
+
+..> Only use wildcard indexes when the fields you want to index are unknown or may change.
+
+..> 
+
+What is a Wildcard Index?
+A wildcard index is a type of database index that helps search for data in a way that allows for flexibility or patterns. Think of it as a way to quickly find something when you don’t know the exact name or value you're searching for. You use "wildcards" (special symbols like * or %) as placeholders for unknown parts of the data.
+
+Simple Scenario to Explain
+Imagine you’re organizing a library with thousands of books. All the books are listed in a catalog. Sometimes, readers don’t remember the full name of the book but may know part of the title.
+
+For example:
+
+One reader might say, "I want a book that starts with Harry but I can’t remember the rest."
+
+Another reader might say, "It has the word Adventure somewhere in the title."
+
+To help readers find these books quickly, you create Wildcard Indexes. These are special catalog entries that make it easy to look for books even if only part of the title is known.
+
+How it Works in a Database
+In databases, wildcard indexes are used to make such flexible searches faster. Without them, searching for something vague (like a part of a name) would take much longer because the database would need to look through everything one by one.
+
+For example:
+
+A database of names:
+
+You have Harry Potter, Hermione Granger, Harold Smith.
+
+If someone searches for "Har*" (meaning anything that starts with “Har”), the wildcard index allows you to instantly find all matching names: Harry, Harold, etc.
+
+A product catalog:
+
+You have items like Blue Shirt, Red Shirt, Blue Pants.
+
+If someone searches for Blue*, the wildcard index quickly finds all items starting with "Blue".
+
+Key Benefits
+Speed: It’s much faster than searching without an index.
+
+Flexibility: You can search for partial matches, like "starts with", "ends with", or "contains".
+
+
+
+
+
+
+
+HASHED INDEXING:
+-------------------- >
+
+
+...> Hashed Index:
+
+@ Hashed indexing is a way to organize and access data by using a hash function to map data to a specific location.
+
+@ Think of it like a super-smart GPS for your data—it quickly finds where your information is stored instead of searching everywhere.
+
+
+## Why is it important?
+-------------------------------------->
+
+Speed: It’s super-fast for retrieving data because the hash function directly finds the data’s “address.”
+
+Efficiency: It works well when you have large datasets and want quick access to specific pieces of data.
+
+Unique Key: It ensures there’s a unique location for each data point, reducing confusion.
+
+
+
+## When to use hashed indexing:
+------------------------------------ >
+
+You have large data and need to access it frequently and quickly.
+
+You are looking up data by a unique identifier, like customer IDs or student roll numbers.
+
+Example: In a library system, hashed indexing can quickly find the book's details based on its unique ID.
+
+
+## How does it compare to other indexes?
+---------------------------------------------->
+
+Other indexes (like sequential or binary indexing) involve searching step-by-step or dividing the search range repeatedly. Hashed indexing, on the other hand, skips all that—it directly finds the exact location using the hash function.
+
+Example in simple terms: Imagine you have 100 lockers, and each locker has a number (1–100). Instead of searching through all the lockers to find your stuff, a hashed index is like knowing the locker number right away! If the locker number is 50, you instantly go there without checking lockers 1 through 49.
+
+
+## When to use hashed indexing in MongoDB ?
+----------------------------------------------->
+
+> When you perform equality-based searches, like find({ field: value }).
+
+*****
+> Not suited for range queries like greater than or less than because hashed indexes are not ordered.
+
+> When you create a hashed index on a field, MongoDB hashes the values of that field and stores the hashed values in the index. This makes queries that match on the hashed field fast, as MongoDB only needs to perform a hash computation on the query value to find matching documents.
+
+
+
+
+..>  db.books.createIndex({author: "hashed"})
+
+> After creating the hashed index, you can perform equality matches on the hashed field efficiently. For example:
+
+> db.books.find({author: "F. Scott Fitzgerald" });
+
+> It’s important to note that hashed indexes are not suitable for range queries or sort operations. 
+> They are specifically designed for equality matches on fields with high cardinality. 
+> Additionally, because hashed indexes store hashed values rather than the original values, you cannot directly retrieve the original values from the index.
+>
+
+
+> For example, a hashed index uses the same hash to store the values 2.3, 2.2, and 2.9. This is a collision, where multiple values are assigned to a single hash key.
+
+> Collisions may negatively impact query performance.
+
+
+> The hashing function does not support multi-key indexes. You cannot create a hashed index on a field that contains an array or insert an array into a hashed indexed field.
+
+> You cannot specify a unique constraint on a hashed index. Instead, you can create an additional non-hashed index with the unique constraint.
+
+> Hashed indexes collect and store hashes of the values of the indexed field.
+
+
+
+TO CREATE THE HASHED INDEX :
+------------------------------- >
+
+
+db.<collection>.createIndex(
+   {
+      <field>: "hashed"
+   }
+);
+
+
+
+
+
+To create a hashed index that contains multiple fields (a compound hashed index), specify hashed as the value of a single index key. For other index keys, specify the sort order (1 or -1):
+
+CREATING THE HASHED INDEX ON THE COMPUND INDEX FIELDS:
+..> 
+
+db.<collection>.createIndex(
+   {
+      <field1>: "hashed",
+      <field2>: "<sort order>",
+      <field3>: "<sort order>",
+      ...
+   }
+)
+
+
+
+..>
+
+
+
+
+MONGO DB IMPORTANT POINTS TO NOTICED:
+---------------------------------------->
+
+
+
+1) MongoDB automatically determines whether to use an index or perform a collection scan based on the size and distribution of data. If MongoDB thinks scanning the collection is faster for small datasets, it might skip the index.
+
+
+2) 
+
+
+productSchema.index({ category: 1, price: 1, productName: 1 });
+
+productSchema.index({ category: 1, price: 1, productName: 1 }, { partialFilterExpression: { price: { $exists: true } } });
+
+
+
+> db.collection.totalIndexSize();
+..> Reports the total size used by the indexes on a collection. Provides a wrapper around the totalIndexSize field of the collStats output.
+
+> cursor.explain()
+db.collection_Name.cursor.explain();
+..> Reports on the query execution plan for a cursor.
+
+> validate
+.> db.collection_Name.validate();
+Internal command that scans for a collection's data and indexes for correctness.
+
+
+
+
