@@ -32,6 +32,7 @@ Why does performance decrease with too many indexes?
 
 i have created an index on quantity, in a table, so i need to see what an index, is stored and how quantity data is stored i need to see and how it referencing the collection i need to see, so how do i see it i need the commands
 
+
 Without Index:
 ======================= >
 
@@ -237,7 +238,14 @@ isMultiKey: Indicates whether the index is on fields containing arrays; here it'
 Keys Examined: The number of index keys checked to find the result (2).
 
 
+NOTE: 
+*********
 
+> Even if you have more then indexex on a single collections then it will only use any one index, when the queries are executing if matched or else it will use the comlpete collection scan.
+.>
+
+MongoDB Uses One Index Per Query
+MongoDB picks only one index per query, not multiple (unless $or is used).
 
 
 NOTE:
@@ -1104,6 +1112,11 @@ HASHED INDEXING:
 -------------------- >
 
 
+A Hash Index is a special index type that stores the hash of a field value, not the value itself.
+
+.> It supports exact match queries only ({ field: value })
+
+
 ...> Hashed Index:
 
 @ Hashed indexing is a way to organize and access data by using a hash function to map data to a specific location.
@@ -1124,13 +1137,21 @@ Unique Key: It ensures there’s a unique location for each data point, reducing
 
 ## When to use hashed indexing:
 ------------------------------------ >
+1)
+ou frequently query with exact equality on a field
+
+You don’t care about sorting or range filtering on that field
+
 
 You have large data and need to access it frequently and quickly.
-
+2)
 You are looking up data by a unique identifier, like customer IDs or student roll numbers.
 
 Example: In a library system, hashed indexing can quickly find the book's details based on its unique ID.
 
+note:
+******
+.> Hash index doesn't give much advantage here unless you have billions of records and are trying to evenly distribute your writes across shards. (Used more in sharded clusters)
 
 ## How does it compare to other indexes?
 ---------------------------------------------->
@@ -1210,11 +1231,35 @@ db.<collection>.createIndex(
 
 ..>
 
+@ What is a Sharded Cluster in MongoDB?
+------------------------------------------------->
+
+A sharded cluster is a setup used to handle large-scale data by splitting (sharding) it across multiple servers.
+
+@ Why use it?
+.............................> 
+
+@ When your data grows beyond what a single server can handle, sharding:
+
+Distributes data across multiple servers (called shards)
+Increases read/write throughput
+Makes scaling horizontal (adding more machines) instead of vertical (upgrading one machine)
+
+
+Components of a Sharded Cluster: 
+------------------------------------- >
+Component	Role
+Shard	A MongoDB server holding part of the data
+mongos	Query router that routes requests to the right shard
+config server	Stores metadata about the cluster (like which data is on which shard)
+
+
+
 
 
 
 MONGO DB IMPORTANT POINTS TO NOTICED:
----------------------------------------->
+---------------------------------------->---------------------------------------->
 
 
 
