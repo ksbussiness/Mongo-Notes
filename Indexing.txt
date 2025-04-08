@@ -1287,5 +1287,14 @@ db.collection_Name.cursor.explain();
 Internal command that scans for a collection's data and indexes for correctness.
 
 
+ngrok http 5000
+
+https://some-random-id.ngrok.io
+
+https://some-random-id.ngrok.io/api/users/register
+
+
+
+
 
 
