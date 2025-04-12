@@ -1,0 +1,1592 @@
+
+Step 1 — Converting Your Standalone MongoDB Instance into a Replica Set:
+
+.> What is the standaloan data base data storing. when i story the in the mongo db compass, then what kind of data it is stored.
+
+.> If i created the mongo db cluster to store the data then what kind of data stroinh technique is it is.
+
+.> How to convert the mongo db local compass data to the 
+
+.> how to know that the my code is running using the  correctly inside the transactions. and code logic logic following the transactions
+
+.> only when my data is in the different replica sets then only i can able to use the transactions,  is it correct.
+
+.>   // Retry logic in the TransientErrorTransactions:
+=========================================================== =>
+
+
+
+
+TRANSACTIONS IN MONGO DB:
+------------------------------ >
+
+
+.> MongoDB is a popular NoSQL database known for its scalability and flexibility, but handling multiple operations across multiple documents and collections has always been a challenge for developers.
+
+.> By the transactions we can now ensure data integrity across multiple operations in a database.
+
+.> In MongoDB, transactions are a feature that allows developers to group multiple read and write operations into a single, atomic unit. 
+
+*******
+NOTE: WHICH means , multiple read and write operations , need to be done in simultaneosully here, at a time :
+
+..> This means that all the operations included in a transaction either succeed together or fail together.
+
+..> If an error occurs at any point during the transaction, all operations are rolled back, leaving the database unchanged.
+
+..> This ensures data consistency and integrity, which is particularly important in applications where multiple related operations must occur simultaneously.
+
+
+
+How Transactions Work in MongoDB :
+-------------------------------------> 
+
+
+.> Start a Transaction: A transaction begins with a "startTransaction" command or similar.
+
+.> Perform Operations: During the transaction, you can perform multiple insert, update, delete, and find operations. These operations are executed within the scope of 	  the transaction.
+
+.> Commit or Abort: Once all the operations have been successfully completed, the transaction is committed using the "commitTransaction" command. If an error occurs or 	if you decide to cancel the transaction, it can be aborted using the "abortTransaction" command.
+
+
+
+
+Example Use Case
+Imagine you are building an e-commerce application, and a user places an order. This involves:
+
+Deducting the item from the inventory.
+
+Recording the order details in the orders collection.
+
+Charging the user's payment method.
+
+These operations must either all succeed together or not happen at all. If the payment fails, you wouldn't want to deduct the item from the inventory or create a record of the order. A MongoDB transaction ensures that these operations are treated as a single atomic unit.
+
+Benefits of Using Transactions :
+--------------------------------------- >
+
+Data Consistency: Ensures that related data changes are applied together.
+
+Error Handling: Simplifies error handling by rolling back incomplete changes automatically.
+
+Multi-Document Operations: Allows operations to span multiple documents and collections, which was not possible in earlier versions of MongoDB.
+
+Handle Complex Use Cases: Useful for applications requiring multi-document updates, such as financial systems or inventory management.
+
+Simplify Development: Developers can write code that handles multiple operations as a single logical unit.
+
+
+
+
+
+Limitations :
+------------------------------------ >
+
+While transactions are powerful, they come with some considerations:
+
+Performance Overhead: Transactions can add latency to database operations due to the additional locking and coordination involved.
+
+Cluster Support: Transactions are fully supported in replica sets and sharded clusters, but they may require additional configuration.
+
+Transactions introduce performance overhead, The need for coordination between operations and locking mechanisms can slow down the overall performance of the database.
+
+In summary, MongoDB transactions bring ACID (Atomicity, Consistency, Isolation, Durability) properties to your operations, making it possible to handle complex use cases where data consistency is critical.
+
+
+
+
+note:*******
+--------------->
+ACID Properties:
+-------------------- >
+
+
+Atomicity: The entire transaction is treated as a single unit of work. Either all operations are successful, or none of them are successful.
+
+Consistency: The database transitions from one valid state to another. Invalid data is never written. /// It make sure data to be in consistency across all the data bses.
+
+Isolation: The execution of one transaction is isolated from others, ensuring that no conflicting operations interfere with one another. // all the operation which occuring in the transaction need to be independent , in exexcuting them self, ensuring no conflict's. occur in between them.
+
+
+Durability: Once committed, the changes are permanent and survive system failures.
+
+
+.> Durability means that once a transaction is successfully completed, all the changes it made are saved permanently in the database. Even if the system crashes or the power goes out right after the transaction is done, those changes won't be lost. They are safe and will still be there when the system comes back online.
+
+
+
+
+
+
+
+
+const mongoose = require('mongoose');
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/yourDatabase', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+const accountSchema = new mongoose.Schema({
+  name: String,
+  balance: Number,
+});
+
+const Account = mongoose.model('Account', accountSchema);
+
+const transferFunds = async (fromAccountId, toAccountId, amount) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // Deduct amount from the sender's account
+    const fromAccount = await Account.findById(fromAccountId).session(session);
+    if (fromAccount.balance < amount) {
+      throw new Error('Insufficient funds');
+    }
+    fromAccount.balance -= amount;
+    await fromAccount.save();
+
+    // Add amount to the recipient's account
+    const toAccount = await Account.findById(toAccountId).session(session);
+    toAccount.balance += amount;
+    await toAccount.save();
+
+    // Commit the transaction
+    await session.commitTransaction();
+    console.log('Transaction successful');
+  } catch (error) {
+    // Rollback the transaction in case of an error
+    await session.abortTransaction();
+    console.error('Transaction failed:', error.message);
+  } finally {
+    session.endSession();
+  }
+};
+
+// Example usage
+transferFunds('accountId1', 'accountId2', 100);
+
+
+Use Case for Session Management :
+---------------------------------------- >
+
+Transaction Context: The session acts as the container for the transaction. It ensures that all operations (e.g., updating the sender's and recipient's balances) are executed as part of the same transactional unit.
+
+Atomicity: By binding database operations to the session, you ensure that the changes are either fully applied (committed) or completely undone (rolled back) in case of an error.
+
+Isolation: The session keeps the transaction isolated from other operations in the database. This means that other database clients won't see intermediate states of the data during the transaction.
+
+Error Handling and Rollback: If any operation within the session fails (e.g., insufficient funds in the sender's account), the session allows the transaction to be aborted. This rolls back all changes to maintain data integrity.
+
+
+
+
+note: 
+***************
+Why It's Necessary
+--------------------- >
+
+.> Without session management, it would be impossible to group multiple operations into a single transaction.
+
+For example, deducting funds from the sender's account and adding them to the recipient's account must occur together. If one operation succeeds and the other fails, it could lead to data inconsistencies.
+
+By using mongoose.startSession(), you're essentially creating a "workspace" where all the operations are tracked and managed. This makes transactions reliable, safe, and easy to implement.
+
+
+
+
+When to Use Transactions with Sessions :
+------------------------------------------- >
+
+Multi-Document Changes: When multiple documents or collections are modified, such as transferring funds or syncing multiple entities.
+
+Data Integrity is Critical: In financial systems, inventory management, or any use case where a partial update can cause issues.
+
+Complex Logic: When multiple dependent operations need to succeed or fail as a whole.
+
+So, while it is not necessary to use sessions for all database operations.
+
+
+NOTE:
+---------- >
+***********
+.> Transactions must always be enclosed in session management to ensure atomicity, consistency, and integrity.
+
+.>  If a transactions session runs for more than 60 seconds after the initial startTransaction() method, MongoDB will automatically abort the operation.
+
+
+
+
+Optimizing Transaction Performance :
+---------------------------------------- >
+
+
+Minimize the Transaction Scope: 
+-------------------------------------- >
+.> Keep the number of operations within a transaction as small as possible. The longer a transaction runs, the more likely it is to impact performance and increase the chance of conflicts with other transactions.
+
+.> Use Proper Indexing: Ensure that fields involved in the transaction are indexed. This helps MongoDB quickly find the documents that need to be modified or queried.
+
+.> Monitor Transaction Performance: Use MongoDB’s currentOp() command to monitor ongoing transactions and their impact on system performance.
+
+.> 
+
+
+write concern in mongo db :
+------------------------------- >
+
+.> Write concern in MongoDB transactions refers to the level of acknowledgment the database provides to confirm that the data written during a transaction has been successfully saved. 
+.> It ensures reliability and consistency of data during write operations in a transaction.
+
+
+
+Levels of Write Concern :
+------------------------------ >
+
+MongoDB offers several levels of write concern:
+
+w: 0 (Unacknowledged): The database doesn't send any acknowledgment for the write operation. This is faster but risky because you won't know if the write succeeded.
+
+w: 1 (Acknowledged): The database acknowledges that the write operation has been applied to the primary replica. This is the most commonly used level.
+
+w: majority (Majority Acknowledgment): The database ensures the write has been applied to the majority of nodes in a replica set. This offers higher reliability.
+
+Custom Levels (w: n): You can specify the number of replica set members that must acknowledge the write. For example, w: 2 requires acknowledgment from the primary and one other replica.
+
+Durability with Journaling
+Write concern also interacts with journaling, which ensures that write operations are saved to disk (even if the system crashes). Setting j: true enables journaling, providing an extra layer of durability for your data.
+
+Write Concern in Transactions
+When using transactions, you need to set an appropriate write concern to ensure the reliability of all write operations within the transaction. By default, MongoDB uses w: majority for transactions, ensuring that changes are acknowledged by the majority of replica set members. You can customize the write concern if needed.
+
+Example in Transactions
+Imagine you have a transaction that:
+
+Adds a new order to the orders collection.
+
+Updates inventory in the inventory collection.
+
+Records payment details in the payments collection.
+
+If the write concern is set to w: majority, MongoDB will ensure that all these operations are successfully applied and acknowledged by the majority of nodes. If any of the write operations fail to meet this level of acknowledgment, the entire transaction is aborted to maintain data consistency.
+
+Why is Write Concern Important?
+Data Integrity: Ensures your writes are properly saved and acknowledged.
+
+Fault Tolerance: Protects against system failures or crashes during a write operation.
+
+Performance Control: Allows you to balance reliability and speed based on your application's needs.
+
+
+ex :
+
+db.users.updateOne(  { name: "Alice" },  { $inc: { balance: -30 } },  { session, writeConcern: { w: "majority" } });
+
+
+
+Difference Between the CallBackApi and CoreApi in Transactions :
+------------------------------------------------------------------- >
+
+.> The Callback API and Core API in MongoDB differ primarily in how they handle transactions and errors:
+
+
+Callback API:
+------------------- >
+
+Automatically starts a transaction, executes operations, and commits (or aborts on error).
+
+Includes built-in error handling for issues like TransientTransactionError and UnknownTransactionCommitResult.
+
+Retries transactions or commits automatically when encountering specific errors.
+
+Recommended for simpler implementation and automated error handling.
+
+Core API:
+------------------- > 
+
+Requires explicit calls to start and commit transactions.
+
+Does not include built-in error handling, offering flexibility for custom error management.
+
+Applications must explicitly incorporate retry logic for errors like TransientTransactionError and UnknownTransactionCommitResult.
+
+The Callback API is generally easier to use, while the Core API provides more control for advanced use cases2. Which one are you considering for your project?
+
+
+
+Some restrictions in the mongo db :
+-------------------------------------- >
+
+.> You cannot use the $graphLookup stage within a transaction while targeting a sharded collection.
+
+.> 
+
+
+Transactions and Sessions :
+------------------------------------- >
+
+.> Transactions are associated with a session.
+
+.> You can have at most one open transaction at a time for a session.
+
+..> If a session ends and it has an open transaction, the transaction aborts.
+
+
+
+
+Cout operation in the  mongo db :
+---------------------------------------- >
+
+
+Count Operation :
+
+..> To perform a count operation within a transaction, use the $count aggregation stage or the $group (with a $sum expression) aggregation stage.
+
+
+
+
+Distinct Operation :
+--------------------------- >
+
+To perform a distinct operation within a transaction:
+
+For unsharded collections, you can use the db.collection.distinct() method/the distinct command as well as the aggregation pipeline with the $group stage.
+
+For sharded collections, you cannot use the db.collection.distinct() method or the distinct command.
+
+To find the distinct values for a sharded collection, use the aggregation pipeline with the $group stage instead. For example:
+
+
+
+Some restriction oprations in transactions :
+----------------------------------------------- >
+
+.> Creating new collections in cross-shard write transactions. For example, if you write to an existing collection in one shard and implicitly create a collection in a different shard, MongoDB cannot perform both operations in the same transaction.
+
+.> 
+
+
+Read Amd Write Concerns in the mongo db :
+--------------------------------------------- >
+
+.> We can adjustthe read and write concerns in the transactions for data durability, and accuracy
+
+.> read concern means when fetching the data , which level of accusacry data you need , 
+
+like :
+
+if you want to fetch the users info then , normal level read concern is required:
+.> a lower level of consistency might be acceptable (e.g., readConcern: local).
+
+if you want to fetch teh user balance for checking the amount availability then readConcern need to be high in this case .
+.> (like user authentication data or balances), ensure accuracy by using readConcern: majority.
+
+Use Case: If the product data (e.g., names, prices, etc.) isn't changing frequently, a lower consistency level (readConcern: local) might be fine.
+.> or frequently updated product details, such as stock levels, use readConcern: majority to avoid showing outdated or incorrect data.
+
+
+Even this is also applicable for the write operations also here:
+
+
+Use Case: If this is non-critical data (e.g., search history that doesn't require absolute accuracy), you can use readConcern: local and avoid a transaction altogether for faster results.
+
+Write Concern: You might use writeConcern: 1 to ensure the recent search options are recorded, but it's not essential if losing search history isn't critical.
+
+
+When to use Read and Write Concerns in Transactions
+Transactions become important when operations involve multiple collections or actions that must succeed together. Here’s where Read Concern and Write Concern are crucial:
+
+
+..> Application in which we can use the Read consern and Write conserns in different scnarios:
+...................................................................................................................................
+E-commerce Checkout Example:
+
+Deduct user balance from the users collection.
+
+Update product stock in the products collection.
+
+Ensure all operations succeed using a transaction.
+
+Use readConcern: majority and writeConcern: majority for accurate and durable updates.
+
+Banking Example:
+
+Transfer funds between accounts, involving multiple collections.
+
+Use readConcern: majority for reading balances and writeConcern: majority for recording transactions.
+
+Critical System Updates:
+
+Synchronizing multiple collections to reflect changes (e.g., deleting user data along with associated records).
+
+Higher concerns ensure consistency and avoid partial updates.
+
+...............................................................................................................................
+
+
+.> mainly the read and write concern are used when my application  is in distributed systems with multiple replicas and servers.
+.> when i ask for get the data i need to get the more accurate data based up on the situations.
+
+.> Even this also for the write concern also , here it is mainly needed when i need to get the data from the multiple replicas and from the different servers.
+
+
+
+.> 
+
+For Read Concerns:
+-------------------------- > 
+
+.> When you have multiple replicas globally, there can be replication lag (i.e., secondary servers might not have the latest data immediately).
+
+Using a higher Read Concern (like majority) ensures you get data that's already confirmed by a majority of the replicas, which prevents reading stale data.
+
+For Write Concerns:
+
+In a distributed setup, writes need to be propagated to multiple replicas for durability.
+
+Using a higher Write Concern (like majority) ensures that your write operation is acknowledged by a majority of replicas, so even if one server goes down, your data remains safe.
+
+
+
+For Write Concerns:
+---------------------------- > 
+
+.> In a distributed setup, writes need to be propagated to multiple replicas for durability.
+
+Using a higher Write Concern (like majority) ensures that your write operation is acknowledged by a majority of replicas, so even if one server goes down, your data remains safe.
+
+When to Use Read and Write Concerns Globally
+Critical Applications: For applications like banking, e-commerce, or healthcare, where accuracy and durability are crucial, you should explicitly define Read Concern: majority and Write Concern: majority.
+
+Global Applications: If you're running globally distributed apps and need data consistency across regions, these concerns ensure correctness.
+
+Low-Risk Applications: For apps like logging or caching, you can stick to lower concerns for better performance.
+
+For single-server environments, you don’t usually need to worry about these concerns explicitly. But as your application scales to a global setup, defining them becomes essential to maintain data integrity and consistency!
+
+
+
+Read Concern :
+---------------------- >
+
+This determines the consistency level of the data you read from MongoDB. Think of it as deciding how "fresh" or "confirmed" the data needs to be:
+
+Local: Reads the most recent data available, even if it hasn’t been confirmed by other servers. Fast but might not be durable.
+
+Majority: Reads data that has been confirmed by most servers in the cluster. Safer but slower.
+
+Linearizable: Guarantees the most up-to-date data but is the slowest.
+
+Example:
+
+If you’re building a real-time chat app, you might use local to get messages quickly.
+
+For a banking app, you’d use majority to ensure transactions are accurate.
+
+2. Write Concern
+This controls how MongoDB acknowledges write operations. It’s like deciding how many people need to confirm your message before you consider it delivered:
+
+w: 1: Only the primary server acknowledges the write. Fast but less safe.
+
+w: majority: Most servers in the cluster confirm the write. Safer but slower.
+
+w: 0: No acknowledgment. Fastest but risky.
+
+Example:
+
+For a logging system, you might use w: 0 since losing a few logs isn’t critical.
+
+For e-commerce orders, you’d use w: majority to ensure no orders are lost.
+
+3. Read Preference
+This decides which server in a replica set to read from:
+
+Primary: Reads from the main server. Always up-to-date.
+
+Secondary: Reads from backup servers. Might be slightly outdated but reduces load on the primary.
+
+Nearest: Reads from the closest server, regardless of whether it’s primary or secondary.
+
+Example:
+
+For a reporting dashboard, you might use secondary to avoid overloading the primary.
+
+For a critical operation, you’d use primary to ensure the latest data.
+
+4. Transactions
+Transactions in MongoDB ensure multiple operations are treated as a single unit. Either all operations succeed, or none do. This is useful for maintaining consistency.
+
+Example Scenarios:
+
+E-commerce: Deduct money from a user’s wallet and add it to the seller’s account. Both actions must succeed together.
+
+Inventory Management: Update stock levels and create an order record. If one fails, the other should roll back.
+
+Combining Read Concern, Write Concern, and Read Preference in Transactions
+When using transactions, you can combine these settings for specific needs:
+
+Scenario 1: In a banking app, use readConcern: majority, writeConcern: majority, and readPreference: primary to ensure accuracy.
+
+Scenario 2: In a social media app, use readConcern: local, writeConcern: 1, and readPreference: nearest for speed.
+
+
+	For Writing the read and write concerns in mongo db:-
+	----------------------------------------------------------------------
+
+Syntax :
+=========== >
+
+
+##@@ Read Preference : { primary, primaryPreferred, secondary,secondaryPreferred, nearest }
+============================================================ ============================================================ 
+primary: Reads from the main server (always up-to-date).
+
+primaryPreferred: Reads from the primary, but can read from a secondary if the primary is unavailable.
+
+secondary: Reads from a backup (replica) server (might not be up-to-date).
+
+secondaryPreferred: Reads from the secondary but can fall back to the primary if needed.
+
+nearest: Reads from the server with the least latency (can be primary or secondary).
+
+
+
+
+
+
+
+##@@ read concern: { local, majority, Linearizable , snapshot , available}
+============================================================ 
+local: Reads data immediately available, including uncommitted changes (fast but less consistent).
+
+available: Reads whatever data is available without waiting for replication or committing.
+
+majority: Reads data that is confirmed by the majority of nodes (slower but consistent).
+
+linearizable: Guarantees the most recent and up-to-date data (slowest but safest).
+
+snapshot: Reads from a stable snapshot, ensuring consistency across multiple operations.
+
+##@@ write cnocern :{ "1", "0", "majority", without, journal }
+============================================================ >
+w: 0: No acknowledgment is required (fastest but least safe).
+
+w: 1: Acknowledgment from the primary server only (default; fast but not durable in distributed setups).
+
+w: majority: Acknowledgment from the majority of servers (replicas), ensuring durability.
+
+journal: true: Ensures the write is committed to the journal for durability.
+
+wtimeout: Specifies a timeout in milliseconds for acknowledging the write.
+
+
+
+
+@@## Difference Between Read Concern and Read Preference :
+--------------------------------------------------------------  >
+
+These two concepts are different but complementary:
+
+Read Concern: GET 
+.....................>
+Controls the consistency level of the data being read.
+
+Determines whether the data is up-to-date or confirmed (e.g., local, majority).
+
+Used to ensure the data integrity within a query or transaction.
+
+
+Read Preference:
+.....................>
+Decides which server to read data from (e.g., primary or secondary).
+
+Balances the load across servers in a replica set.
+
+Does not guarantee consistency by itself but helps optimize performance.
+
+Example:
+
+If you use Read Preference: secondary and Read Concern: local, you'll read from a replica server without verifying consistency, which might result in slightly outdated data.
+
+If you use Read Preference: primary and Read Concern: majority, you'll read from the main server and ensure the data is confirmed by the majority of replicas.
+
+
+
+
+
+
+ session.startTransaction({
+
+    readConcern: { level: 'snapshot' },
+    writeConcern: { w: 'majority' },
+    readPreference: 'primary',
+	{ readPreference: { mode: "primary" } } 
+
+  });
+
+
+
+
+
+Where to implement READ CONCERN :
+------------------------------------- >
+
+You can define the Read Concern in two places:
+
+At the Collection Level:
+------------------------------ >
+ 
+.>When fetching data from the database, you can specify the read concern for the query using the readConcern option.
+
+Ex : const result = db.collection('users').find({}).readConcern('majority');
+
+At the Transaction Level: 
+------------------------------ > 
+
+.> You can set a Read Concern for the entire transaction when starting it.
+
+Ex:
+
+const session = client.startSession();
+session.startTransaction({ readConcern: { level: "majority" } });
+What Happens: Every read operation within the transaction uses the specified read concern.
+
+
+You can specify the Write Concern in two places:
+
+Where to implement WRITE CONCERN : 
+-------------------------------------------------->
+
+
+
+At the Collection Level: 
+----------------------------------- >
+
+.> When performing a write operation (insert, update, delete), you can include the write concern.
+
+
+db.collection('users').insertOne({ name: "Alice" }, { writeConcern: { w: "majority" } });
+What Happens: MongoDB ensures the write operation is acknowledged by the majority of replicas before confirming success.
+
+At the Transaction Level:
+-------------------------------- >
+
+.>  You can set a Write Concern for the entire transaction when committing it.
+
+
+await session.commitTransaction({ writeConcern: { w: "majority" } });
+What Happens: MongoDB ensures all write operations within the transaction are durable and acknowledged as per the specified level.
+
+Detailed Breakdown of Effects
+Read Concern: Controls the consistency of data being read during the transaction or query. For example:
+
+If you use local, you might read uncommitted or stale data.
+
+If you use majority, you only read data that’s confirmed by most replicas.
+
+Write Concern: Determines how durable and safe your write operations are. For instance:
+
+Using w: 1 only requires acknowledgment from the primary server (faster but riskier).
+
+Using w: majority ensures data is written to most replicas for durability.
+
+Why Specify at Transaction Level?
+When working with transactions, setting these concerns at the transaction level ensures all operations within the transaction adhere to the same consistency and durability requirements. This is especially critical for:
+
+Multi-document Transactions: Ensures all reads and writes are consistent and durable across multiple collections.
+
+Critical Data Operations: Guarantees data integrity and safety in sensitive applications.
+
+
+Note :
+***************
+============>
+..>  Operation is acknowledged by a majority of the servers (replicas) in the cluster. So, the data is considered durable only after most replicas have saved it, which makes it safer but slower. 
+
+..> 
+
+
+difference between the read concern, read preference :
+=============================================================== >
+
+
+Read Concern : 
+---------------------- >
+
+.> What it is: It defines the level of consistency and isolation for reading data from a database. It ensures what kind of data you get when you perform a read operation (e.g., most recent data, committed data, etc.).
+
+
+Read Preference :
+-------------------- >
+
+.> What it is: It decides from which server or node in a distributed database you want to read the data. It's about where your data comes from, rather than its consistency level.
+
+
+
+Quick Summary:
+---------------------- >
+
+Read concern is about what data to read (e.g., recent, committed data).
+
+Read preference is about where to read data from (e.g., primary or secondary node).
+
+
+
+Database: The organized information (e.g., customer details, orders, etc.).
+
+Server: The computer managing and sharing the database.
+
+Node: A branch of the server system where a copy of the database might be stored.
+
+
+
+Note Point :
+*************** *
+======================>
+
+.> WE CAN START THE TRANSCATION IN ONE ENDPOIT AND COMMIT THE TRANSCATION IN AN OTHER FUNCTION :
+
+BUT THE MAJOR CONSIDERATIOIN IS THAT:
+========================================> 
+
+EX:
+addingProduct { We can start the transcation here}
+getProduct  { we can end the transcation here }
+
+
+
+The addingProduct function should ensure that all operations are staged but not committed yet.
+
+The getProduct function would be responsible for completing (committing) or rolling back the transaction.
+
+
+EXAMPLE HERE:
+
+Share Transaction Across Functions  in a single file in index.js  only :
+-------------------------------------------------------------------------->
+
+.> The transaction object must persist and be shared across the functions involved. Here’s an example using Sequelize:
+
+import mongoose from 'mongoose';
+
+// Define your schema
+const productSchema = new mongoose.Schema({
+  name: String,
+  price: Number,
+});
+
+const Product = mongoose.model('Product', productSchema);
+
+export const addingProduct = async (req, res) => {
+  const session = await mongoose.startSession(); // Start a session
+  session.startTransaction(); // Start a transaction
+
+  try {
+    // Perform operations within the transaction
+    const newProduct = new Product.create({ name: req.body.name, price: req.body.price });
+   //await newProduct.save({ session });
+
+    // Pass the session to the next function (e.g., via request object)
+    req.session = session;
+    res.status(200).send('Product added successfully.');
+  } catch (error) {
+    await session.abortTransaction(); // Rollback transaction in case of error
+    session.endSession();
+    res.status(500).send('Error adding product.');
+  }
+};
+
+export const getProduct = async (req, res) => {
+  const session = req.session; // Retrieve the session
+  try {
+    // Perform operations within the transaction
+    const products = await Product.find({}, null, { session });
+
+    await session.commitTransaction(); // Commit the transaction
+    session.endSession();
+    res.status(200).send(products);
+  } catch (error) {
+    await session.abortTransaction(); // Rollback transaction in case of error
+    session.endSession();
+    res.status(500).send('Error retrieving products.');
+  }
+};
+
+
+
+4. Handle Errors and Edge Cases
+Timeouts: Ensure transactions do not exceed timeout limits.
+
+Error Handling: If any part of the transaction fails (in addingProduct or getProduct), rollback all changes to maintain consistency.
+
+Isolation: Ensure that the transaction does not interfere with other operations or transactions.
+
+5. Alternative Consideration
+This approach ties operations together and may lead to unexpected complexities, especially in distributed systems. If addingProduct and getProduct are independent, consider whether combining them into a single transactional scope is necessary. Alternatively, you could decouple transactions and handle consistency in a different way.
+
+
+
+
+
+## Sharing the Transactions across the multiple  files  like Product.js to the order.js 
+----------------------------------------------------------------------------------------------->
+
+.> Yes, it is technically possible to start a transaction in product.js and end it in order.js. However, this approach adds complexity and requires a well-structured system to maintain the shared transaction context across multiple modules.
+
+# Key Considerations :
+========================= >
+
+Shared Session Object: You need a shared session object that can persist across different files (product.js and order.js).
+
+Transaction Management: Ensure that any failure in the transaction logic across files is handled properly with a rollback.
+
+Code Structure: Use a mechanism like Dependency Injection or a Service Layer to pass the transaction context between modules.
+
+product.js:
+=============== >
+
+import mongoose from 'mongoose';
+import { handleOrderLogic } from './order.js'; // Import order logic
+
+export const addingProduct = async (req, res) => {
+  const session = await mongoose.startSession(); // Start a session
+  session.startTransaction(); // Start a transaction
+
+  try {
+    // Perform some operations related to the product
+    const newProduct = await Product.create([{ name: req.body.name, price: req.body.price }], { session });
+
+    // Call the order logic and pass the session
+    await handleOrderLogic(req.body.orderDetails, session);
+
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).send('Product and order processed successfully.');
+  } catch (error) {
+    await session.abortTransaction(); // Rollback transaction in case of error
+    session.endSession();
+    res.status(500).send('Transaction failed.');
+  }
+};
+
+order.js :
+================>
+
+import mongoose from 'mongoose';
+
+export const handleOrderLogic = async (orderDetails, session) => {
+  try {
+    // Perform operations related to the order
+    const newOrder = await Order.create([{ details: orderDetails }], { session });
+    
+    // Add more logic here if needed
+  } catch (error) {
+    throw new Error('Order processing failed: ' + error.message);
+  }
+};
+
+
+
+
+
+Transaction Error Handling :
+================================================================================================== > :
+
+..> we have the abortfunctionality in the transactions when some thing happens while the transactions are completlly executed.
+
+..> But we encounter some magical issuses suddely in between the transactions , some of  them are handled by the callback API , while , in the coreAPI WE need to explicity need to handled them .
+
+
+..> 
+
+The explanation you're asking about revolves around error handling during transactions in MongoDB and why retry mechanisms are needed, even when there’s already a process to abort transactions under certain conditions. Let me break it down for you in simple terms:
+
+1. Why Transactions May Fail
+-------------------------------------------------------------------- >
+
+..> Transactions are used to group multiple operations so they succeed or fail together. However, there are a few scenarios where transactions can fail:
+
+TransientTransactionError: Temporary issues like the database’s primary server being unavailable.
+
+UnknownTransactionCommitResult: When MongoDB cannot determine if the commit (final step of a transaction) succeeded or failed.
+
+TransactionTooLargeForCache: When the transaction exceeds the cache memory allocation.
+
+2. Why Retry Logic Is Needed :
+-------------------------------------------------------------------->
+
+.> Aborting a transaction when errors like these occur is essential to prevent inconsistent data. However, retry logic is equally important because:
+
+In cases like TransientTransactionError, the issue is temporary. Retrying the transaction often leads to success after the temporary problem resolves.
+
+For UnknownTransactionCommitResult, retrying is necessary to ensure that the changes from the transaction are correctly finalized or rolled back.
+
+For TransactionTooLargeForCache, retrying with adjustments (e.g., splitting the transaction into smaller parts) might help.
+
+3. What Happens With TransactionTooLargeForCache?
+-------------------------------------------------------------------->
+
+.> Starting with MongoDB 6.2, when a transaction takes up more than 75% of the cache memory, the database does not retry the transaction automatically because the likelihood of it failing again is high. Instead, you get a specific error: TransactionTooLargeForCache. Earlier, this error was less specific and appeared as "TemporarilyUnavailable" or "WriteConflict." You can adjust the cache threshold using the setParameter command if needed, but it’s generally better to break down large transactions into smaller, manageable ones.
+
+4. Callback vs Core API :
+---------------------------------------------------------------------> 
+
+.> The callback API already handles retry logic for most errors like TransientTransactionError and UnknownTransactionCommitResult, making your work easier.
+
+.> The core transaction API gives you more control but does not include retry logic automatically. That means you have to explicitly add your own retry mechanism in your application code to handle these errors.
+
+In simple terms: even if the transaction gets aborted due to an error, retrying it ensures that you give the operation another chance to succeed under better conditions or fix temporary problems.
+
+
+
+
+PRODUCTION CONSIDERATION IN TRANSACTIONS:
+================================================================================================== > :
+
+
+.> vailability
+MongoDB standalone deployments do not support transactions. To use transactions, your deployment must be a multiple node replica set.
+
+
+.> by default the 60 sec if the run time for any tranction, if this time is execeeded then it will abort the transaction immediately.
+
+.> we can change the time for this transaction time limit :
+
+
+
+
+
+const session = await mongoose.startSession();
+session.startTransaction();
+
+try {
+
+// this  is custom logic for the time implementation for the transation here :
+
+  const timeout = setTimeout(() => {
+    throw new Error('Transaction timeout: Operation exceeded 180 seconds.');
+  }, 180000); // 180 seconds
+
+
+  await YourModel.updateOne({ _id: yourId }, { $set: yourData }, { session });
+
+  await session.commitTransaction();
+
+
+  clearTimeout(timeout);
+
+} catch (error) {
+  
+  await session.abortTransaction();
+
+} finally {
+  session.endSession();
+}
+
+
+
+
+db.adminCommand( { setParameter: 1, transactionLifetimeLimitSeconds: 30 } )
+
+
+
+.> MongoDB creates as many oplog entries as necessary to the encapsulate all write operations in a transaction, instead of a single entry for all write operations in the transaction. This removes the 16MB total size limit for a transaction imposed by the single oplog entry for all its write operations.
+
+ @Note:
+**********
+
+....> In-progress Transactions and Write Conflicts
+
+.> The transaction guarantees isolation, so no changes are made to the document until it either commits or aborts.
+
+.> If we intiated an tranastion on the  one collection to modify an document in the controller, , 
+
+    accounts:
+{
+   "_id": 1,
+   "accountHolder": "Alice",
+   "balance": 100
+}
+
+
+try{
+const session = client.startSession();
+
+session.startTransaction();
+const accounts = db.collection("accounts");
+
+// Deduct $50 from Alice's balance
+accounts.updateOne(
+   { _id: 1 }, 
+   { $inc: { balance: -50 } },
+   { session }
+);
+
+// Intending to commit later... here we intinated the transaction but we did not commited it , so if any external code try's to change the same document it will then encounter with the TRANSACTION WRITE ERROR HERE.
+
+
+
+// External operation
+db.collection("accounts").updateOne(
+   { _id: 1 },
+   { $set: { balance: 120 } } // Adj
+
+
+
+}
+
+catch(err) {
+
+console.log(err, "while executing the transaction");
+}
+
+
+
+..>  accounts.updateOne(
+   { _id: 1 }, 
+   { $inc: { balance: -50 } },
+   { session }
+); here it is mandatory to set up the {session } here because ,this make sure to attach the update quey to be part of the transaction. other wise it will be not part of the transaction , 
+
+Concurrent External Operation: Before the transaction commits, an external operation (outside the transaction) attempts to modify the same document:
+
+
+@@## Acquiring the Looks in mongo db :
+=========================================================== > 
+
+
+.> Acquiring Locks
+By default, transactions wait up to 5 milliseconds to acquire locks required by the operations in the transaction. If the transaction cannot acquire its required locks within the 5 milliseconds, the transaction aborts.
+
+ Locking in MongoDB :
+------------------------------- >
+
+What’s Happening? :
+-------------------------------> 
+
+..> Imagine a transaction is like a person trying to enter a room (the “lock”) to perform an important task. The room can only be accessed by one person at a time. The transaction waits for a few moments (5 milliseconds by default) to see if it can enter the room. If it still can’t enter because someone else is using the room (the lock is occupied), the transaction decides to stop and cancel its task entirely (this is called “aborting”).
+
+Why Does This Happen? :
+------------------------------ >
+
+.> This behavior is there to prevent transactions from waiting forever for locks. It's a safety mechanism to avoid bottlenecks or situations where a transaction keeps waiting indefinitely and slows down the system.
+
+.>.>  MongoDB locks are used to ensure data consistency while multiple operations are being executed. However, instead of locking the entire table or database, MongoDB locks only the specific document that's being modified.
+
+
+EX :
+====== >
+
+...> Two people (transactions) are trying to update the same bank account at the same time. MongoDB places a "lock" on that specific account document so only one transaction can update it at a time. If the second transaction cannot get the lock within 5 milliseconds, it gives up and stops to avoid waiting forever.
+
+.> Document-Level Locks: Operations only lock the specific document being accessed, allowing other transactions to interact with different documents simultaneously.
+
+.> Timeout Behavior: If a lock can't be acquired (due to another operation holding it), MongoDB will retry for some time before throwing an error.
+
+
+
+NOTE :
+***********>
+
+.> When creating or dropping a collection immediately before starting a transaction, if the collection is accessed within the transaction, issue the create or drop operation with write concern "majority" to ensure that the transaction can acquire the required locks.
+
+.> 
+
+
+
+
+WE HAVE THE TWO TYPES OF THE MONGO TRANSACTIONS API :
+=========================================================== >
+
+
+i) CORE TRANSACTION API.
+
+ii) CALLBACK TRANSACTION API.
+
+
+
+
+.> If we write the transactions in this way then it is said to be part of the CORE-TRANSACTION API :
+
+
+try{
+const session = await mongoose.startSession(); 
+session.startTransaction(); 
+
+await YourModel.updateOne({ _id: yourId }, { $set: yourData }, { session });
+
+await session.commitTransaction(); 
+} 
+
+catch (error)
+ { 
+
+await session.abortTransaction();
+ session.endSession();
+
+ }
+
+
+Core Transaction API: 
+============================= >
+.> You manually handle the flow of starting, committing, and aborting transactions (as you're doing in your example). This API gives you full control over the transaction and requires you to include explicit retry logic for errors, like TransientTransactionError or UnknownTransactionCommitResult.
+
+
+
+3. Why It Matters
+Since you're using the Core Transaction API here, you need to ensure that you incorporate retry logic for errors like:
+
+TransientTransactionError: Retry the transaction if it's a temporary issue.
+
+UnknownTransactionCommitResult: Retry the commitTransaction() step to verify success.
+
+TransactionTooLargeForCache: When the transaction exceeds the cache memory allocation.
+
+
+FOR Handling The TransientTransactionError : in the CORE-API :
+---------------------------------------------->
+
+1. TransientTransactionError
+When this error occurs, it usually points to temporary issues like a primary server stepping down or other transient conditions. To handle this:
+
+Catch the error labeled as TransientTransactionError.
+
+Implement retry logic by re-executing the entire transaction from the start. For example:
+
+
+ex:-1
+==========>
+async function executeTransaction() {
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+    await YourModel.updateOne({ _id: yourId }, { $set: yourData }, { session });
+
+    await session.commitTransaction();
+
+  } catch (error) {
+    if (error.hasErrorLabel("TransientTransactionError")) {
+      // Retry logic
+      console.error("Transient error occurred. Retrying transaction...");
+      return await executeTransaction();
+    }
+
+    // Abort if not retryable
+    await session.abortTransaction();
+    throw error;
+
+  } finally {
+    session.endSession();
+  }
+}
+
+
+
+2. UnknownTransactionCommitResult
+This error occurs when MongoDB cannot confirm if a commitTransaction() operation succeeded. Handling this involves retrying just the commit step of the transaction:
+
+
+ex-2:
+========== >
+
+
+try {
+  await session.commitTransaction();
+} catch (error) {
+  if (error.hasErrorLabel("UnknownTransactionCommitResult")) {
+    console.error("Unknown commit result error. Retrying commit...");
+    // Retry the commit transaction
+    await session.commitTransaction();
+  } else {
+    await session.abortTransaction();
+    throw error;
+  }
+}
+
+
+
+
+
+3. TransactionTooLargeForCache
+This error is specific to transactions exceeding the cache limit (introduced in MongoDB 6.2). To handle it:
+
+You cannot retry the transaction as-is; you may need to optimize it by splitting it into smaller transactions or reducing its memory usage.
+
+Catch the error labeled TransactionTooLargeForCache and apply necessary adjustments:
+
+
+
+
+ex-3:
+============= >
+
+
+try {
+  session.startTransaction();
+  await YourModel.updateOne({ _id: yourId }, { $set: yourData }, { session });
+  await session.commitTransaction();
+} catch (error) {
+  if (error.hasErrorLabel("TransactionTooLargeForCache")) {
+    console.error("Transaction too large for cache. Consider splitting the transaction or reducing cache usage.");
+    await session.abortTransaction();
+  } else {
+    await session.abortTransaction();
+    throw error;
+  }
+} finally {
+  session.endSession();
+}
+
+
+
+ex-3a) :
+================= >
+
+
+async function executeSmallTransactions(dataArray) {
+
+  for (let data of dataArray) {
+
+    const session = await mongoose.startSession();
+    try {
+      session.startTransaction();
+      await YourModel.updateOne({ _id: data.id }, { $set: data.update }, { session });
+      await session.commitTransaction();
+    }
+
+       catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+  }
+}
+
+
+ex:-2 
+Adjust Cache Threshold
+=============================>
+
+MongoDB 6.2 introduces the TransactionTooLargeForCache error when a transaction exceeds 75% of the cache.
+
+You can modify the cache threshold using MongoDB’s setParameter command to increase the limit if your server can handle more memory usage. However, this approach is only suitable for scenarios with sufficient server resources.
+
+
+db.adminCommand({
+  setParameter: 1,
+  transactionTooLargeForCacheThreshold: 0.85
+});
+4. Optimize Query Performance
+Use efficient indexing and avoid operations that fetch or update unnecessary data in the transaction.
+
+
+Callback API: 
+============================ >
+
+.> This abstracts the transaction handling. You pass in a function (a callback), and MongoDB drivers handle retry logic automatically in the event of certain errors. It simplifies transaction management and error handling for developers.
+
+
+
+CORE API TRANSACTION API : IN MY ONE OF THE CONTROLLER HEREL: 
+================================== >
+
+export const AddingProduct = async (req, res) => {
+  const session = await mongoose.startSession();
+
+  try {
+    // Start the transaction
+    session.startTransaction();
+
+    // Retrieve user details
+    let user = await UsersDetails.findById(req.user.id);
+    console.log("User info who is adding the product:", user);
+
+    let {
+      productName,
+      productDescription,
+      price,
+      quantityAvailable,
+      category,
+      Bookedproducts,
+      manufactureredBy,
+      Ratings,
+    } = req.body;
+
+    // Perform the product creation
+    let product = await Products.create(
+      [
+        {
+          productName,
+          productDescription,
+          price,
+          category,
+          quantityAvailable,
+          Bookedproducts,
+          manufactureredBy,
+          Ratings,
+        },
+      ],
+      { session }
+    );
+
+    console.log("Product created:", product);
+
+    // Commit the transaction
+    await session.commitTransaction();
+
+    return res
+      .status(StatusCodes.CREATED)
+      .json({ message: "The product added successfully" });
+  } catch (err) {
+    console.error("Error adding the product:", err);
+
+    // Abort the transaction in case of errors
+    await session.abortTransaction();
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: "Server error while adding the product" });
+  } finally {
+    // End the session
+    session.endSession();
+  }
+};
+
+
+
+
+CALLBACL API IN TRANSACTIONS :
+=======================================>
+
+export const AddingProduct = async (req, res) => {
+  const session = await mongoose.startSession();
+
+  try {
+    await session.withTransaction(async () => {
+      // Retrieve user details
+      let user = await UsersDetails.findById(req.user.id);
+      console.log("User info who is adding the product:", user);
+
+      let {
+        productName,
+        productDescription,
+        price,
+        quantityAvailable,
+        category,
+        Bookedproducts,
+        manufactureredBy,
+        Ratings,
+      } = req.body;
+
+      // Perform the product creation
+      let product = await Products.create(
+        [
+          {
+            productName,
+            productDescription,
+            price,
+            category,
+            quantityAvailable,
+            Bookedproducts,
+            manufactureredBy,
+            Ratings,
+          },
+        ],
+        { session }
+      );
+
+      console.log("Product created:", product);
+    });
+
+    return res
+      .status(StatusCodes.CREATED)
+      .json({ message: "The product added successfully" });
+  } catch (err) {
+    console.error("Error adding the product:", err);
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: "Server error while adding the product" });
+  } finally {
+    // End the session
+    session.endSession();
+  }
+};
+
+
+
+
+Transactions in MongoDB:
+===============================>
+
+NOTE :*************
+==============>
+.>  Even if you're working locally without replicas, you can use MongoDB's transactions feature, but it requires your MongoDB instance to be a replica set. If you're not using a replica set, then MongoDB won't support transactions. Instead, you can manually handle operations and implement rollbacks as needed in your application code.
+
+.> 
+
+Local Setup Challenges: Since you mentioned you're working locally without replicas, ensure your data operations (like insert, update, and delete) are designed to handle potential failures. You might need to write additional error-handling logic since you're not relying on MongoDB's built-in transactional guarantees.
+
+Callback API Integration: Regardless of whether transactions are supported natively, your callback API can still define the structure for how operations are initiated, confirmed, or aborted. You'll just need to implement logic to ensure data consistency, which might involve manually keeping track of changes and reverting them if necessary.
+
+
+
+
+SETING UP THE REPLICA SETS IN THE MONGO DB :
+==================================================>
+
+
+.> When working with databases, it’s often useful to have multiple copies of your data. This provides redundancy in case one of the database servers fails and can improve a database’s availability and scalability, as well as reduce read latencies.
+
+.> Replication is the process of duplicating or synchronizing data across multiple databases or servers. It ensures redundancy, high availability, and improved performance in case of server failure. In MongoDB, replication is achieved through replica sets.
+
+.> The practice of synchronizing data across multiple separate databases is called replication. In MongoDB, a group of servers that maintain the same data set through replication are referred to as a replica set.
+
+.> A replica set in MongoDB is a group of servers (or nodes) that maintain the same data set through replication. A replica set typically consists of:
+
+
+Primary Node: Handles all write operations and replicates data to the secondary nodes.
+
+Secondary Nodes: Receive replicated data from the primary node and serve read requests (if configured).
+
+Arbiter Node (optional): Participates in elections for primary but does not hold data.
+
+
+When setting up a MongoDB replica set, the primary node contains the original data, while the secondary nodes maintain copies of that same data through replication. So, the complete dataset is synchronized across all the servers in the replica set.
+
+Here’s how it works:
+
+The primary node handles all write operations and replicates the data to the secondary nodes.
+
+The secondary nodes receive these updates and replicate the data from the primary. They serve as backup copies of the data for high availability and redundancy.
+
+Secondary nodes do not store additional or different data; they store the same data as the primary node to ensure consistency across the replica set.
+
+This mechanism ensures that, even if one server fails (e.g., the primary), the remaining servers (the secondary nodes) can take over seamlessly and continue to provide access to the same data.
+
+Working flow here  in the Replica set in mongoDB :
+================================================================= >
+
+In a MongoDB replica set, all servers (nodes) in the set maintain the same databases, the same collections, and the same data within those collections.
+
+Here's how it works in the case of your setup:
+
+All three servers (Server1, Server2, Server3) will replicate the data from the primary server (Server1).
+
+If you insert data into the CustomerDB database's Customers collection on the primary server, that exact data will automatically be replicated to the CustomerDB database's Customers collection on the secondary servers (Server2 and Server3).
+
+Similarly, the OrderDB database's Orders collection will have identical data across all servers.
+
+This replication ensures consistency among all nodes and provides fault tolerance—if the primary server fails, one of the secondary servers can take over as the new primary while still maintaining the same data.
+
+
+
+
+
+
+
+
+
+
+
+Example: Setting up a Replica Set
+Let’s assume we have three servers:
+
+Server1 (192.168.1.10)
+
+Server2 (192.168.1.20)
+
+Server3 (192.168.1.30)
+
+We also have two databases:
+
+CustomerDB
+
+OrderDB
+
+Within these databases, there are collections:
+
+CustomerDB: Customers
+
+OrderDB: Orders
+
+We want to set up a replica set named myReplicaSet to replicate the data across these servers.
+
+Steps and Configuration
+Start MongoDB Instances: Launch MongoDB instances on each server using the following commands:
+
+bash
+mongod --replSet "myReplicaSet" --port 27017 --dbpath /data/db1 --bind_ip 192.168.1.10
+mongod --replSet "myReplicaSet" --port 27017 --dbpath /data/db2 --bind_ip 192.168.1.20
+mongod --replSet "myReplicaSet" --port 27017 --dbpath /data/db3 --bind_ip 192.168.1.30
+Connect to MongoDB Shell: Connect to the primary server (Server1) and initialize the replica set:
+
+bash
+mongo --host 192.168.1.10
+Run the following command in the MongoDB shell:
+
+javascript
+rs.initiate({
+   _id: "myReplicaSet",
+   members: [
+      { _id: 0, host: "192.168.1.10:27017" },
+      { _id: 1, host: "192.168.1.20:27017" },
+      { _id: 2, host: "192.168.1.30:27017" }
+   ]
+});
+This sets up the replica set and designates Server1 as the Primary Node.
+
+Insert Data into Primary: Now, insert sample data into collections. For example:
+
+In CustomerDB:
+
+javascript
+use CustomerDB;
+
+db.Customers.insertMany([
+   { _id: 1, name: "John Doe", email: "john@example.com" },
+   { _id: 2, name: "Jane Smith", email: "jane@example.com" }
+]);
+In OrderDB:
+
+javascript
+use OrderDB;
+
+db.Orders.insertMany([
+   { _id: 101, customerId: 1, total: 250 },
+   { _id: 102, customerId: 2, total: 350 }
+]);
+Check Data Replication: Connect to one of the secondary servers (Server2 or Server3) using the MongoDB shell:
+
+bash
+mongo --host 192.168.1.20
+Run the following commands to check replicated data:
+
+javascript
+use CustomerDB;
+db.Customers.find();
+
+use OrderDB;
+db.Orders.find();
+You should see the same data replicated from the primary node.
+
+Benefits of Replica Sets
+High Availability: If the primary server fails, a secondary server is automatically elected as the new primary.
+
+Data Redundancy: Data is synchronized across all nodes.
+
+Improved Read Performance: Secondary nodes can serve read requests (with readPreference configuration).
+
+ 
+
+
+
+
+transaction in mongo.txt
+Displaying transaction in mongo.txt.
