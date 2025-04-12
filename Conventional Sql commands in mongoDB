@@ -1,0 +1,147 @@
+1. DDL (Data Definition Language)
+Purpose: Defines structure of the database and collections.
+
+SQL Examples:
+CREATE, ALTER, DROP, TRUNCATE
+
+MongoDB Equivalents:
+SQL DDL	MongoDB Equivalent	Use Case
+CREATE TABLE	db.createCollection()	Create a new collection
+DROP TABLE	db.collection.drop()	Delete a collection
+ALTER TABLE	Not directly supported, but use schema validation or custom logic	
+TRUNCATE	db.collection.deleteMany({})	Delete all documents without deleting collection
+
+
+EX:
+// Create a collection
+db.createCollection("students")
+
+// Drop a collection
+db.students.drop()
+
+// Truncate-like behavior
+db.students.deleteMany({})
+
+
+2. DML (Data Manipulation Language)
+Purpose: Used to manipulate data inside collections.
+
+SQL Examples:
+INSERT, UPDATE, DELETE
+
+MongoDB Equivalents:
+SQL DML	MongoDB Command	Use Case
+INSERT	insertOne(), insertMany()	Add new documents
+UPDATE	updateOne(), updateMany(), replaceOne()	Update document(s)
+DELETE	deleteOne(), deleteMany()	Remove document(s)
+
+
+EX:
+
+// Insert
+db.students.insertOne({ name: "Sachin", age: 24 })
+
+// Update
+db.students.updateOne(
+  { name: "Sachin" },
+  { $set: { age: 25 } }
+)
+
+// Delete
+db.students.deleteOne({ name: "Sachin" })
+
+
+
+3. DQL (Data Query Language)
+Purpose: Fetch data from collections.
+
+SQL Example:
+SELECT
+
+MongoDB Equivalent:
+find(), findOne(), with filters, projection, and operators
+
+Use Case:
+Fetch documents with various criteria.
+
+MongoDB Examples:
+
+EX:
+
+// Fetch all documents
+db.students.find()
+
+// Fetch with condition
+db.students.find({ age: { $gt: 20 } })
+
+// Fetch with projection
+db.students.find({ age: { $gt: 20 } }, { name: 1, _id: 0 })
+
+
+
+
+4. TCL (Transaction Control Language)
+Purpose: Manage transactions in databases (commit, rollback, etc.)
+
+SQL Example:
+BEGIN, COMMIT, ROLLBACK
+
+MongoDB Equivalent (Transactions supported in replica sets or sharded clusters):
+startSession(), startTransaction(), commitTransaction(), abortTransaction()
+
+MongoDB Example:
+
+EX:
+
+const session = db.getMongo().startSession()
+session.startTransaction()
+
+try {
+  session.getDatabase("test").students.insertOne(
+    { name: "Ravi" }, { session }
+  )
+  session.getDatabase("test").marks.insertOne(
+    { student: "Ravi", score: 90 }, { session }
+  )
+  session.commitTransaction()
+} catch (e) {
+  session.abortTransaction()
+}
+session.endSession()
+
+
+5. DCL (Data Control Language)
+Purpose: Manage permissions and access control.
+
+SQL Example:
+GRANT, REVOKE
+
+MongoDB Equivalent:
+createUser(), grantRolesToUser(), revokeRolesFromUser()
+
+MongoDB Examples:
+
+
+
+EX:
+
+// Create user with read access
+db.createUser({
+  user: "readUser",
+  pwd: "1234",
+  roles: [{ role: "read", db: "test" }]
+})
+
+// Grant additional role
+db.grantRolesToUser("readUser", [{ role: "readWrite", db: "test" }])
+
+
+
+
+
+
+
+
+
+
+
