@@ -2078,9 +2078,11 @@ Starting in MongoDB 5.0, nodes configured with only IP addresses won’t start.
 
 
 
+..>  The median time before a cluster elects a new primary should not typically exceed 12 seconds, assuming default replica configuration settings.
 
-
-
+..> Heartbeats
+Replica set members send heartbeats (pings) to each other every two seconds.
+If a heartbeat does not return within 10 seconds, the other members mark the delinquent member as inaccessible.
 
 
 
@@ -2118,7 +2120,43 @@ Starting in MongoDB 5.0, nodes configured with only IP addresses won’t start.
 #######################################################################################################
 
 
+SHARDING :
 
+..> Distri bution of the data across the different servers is clled SHADING.
+
+
+150 tb data in a single server A.
+
+after shading :
+
+50Tb on the server A
+
+50Tb on the server B
+
+50Tb on the server C
+
+
+
+..> When any write request came them this will go to the any of these 3 server , but first it will go to teh mongos , so here it decides to which server it need to go 
+
+.> Use <database name>
+.> db.createCollection("<CollectionName">)
+.> sh.shardCollection("<databaseName>.<CollectionName", {"<Sharding_Key> ": 1} );
+
+{
+id:1,
+name:"Viray",
+age:90
+}
+
+here the {"<Sharding_Key> ": 1}  , "<Sharding_Key> equals to any Filed or key in the req.body : eg: name here, it will sort the all data accordingly and 
+
+we have the 3 server 
+
+so 
+from A-I will go in to the Server -A
+from J-P will go in to the Server -B
+from M-Z will go in to the server -Z
 
 
 
