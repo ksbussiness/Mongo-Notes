@@ -1,1 +1,153 @@
 
+db.createCollection("orders", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["orderId", "customerName", "items", "totalAmount", "createdAt"],
+      properties: {
+        orderId: {
+          bsonType: "string",
+          description: "must be a string and is required"
+        },
+        customerName: {
+          bsonType: "string",
+          minLength: 1,
+          description: "must be a non-empty string"
+        },
+        items: {
+          bsonType: "array",
+          minItems: 1,
+          items: {
+            bsonType: "object",
+            required: ["productId", "quantity", "price"],
+            properties: {
+              productId: {
+                bsonType: "string",
+                description: "must be a string"
+              },
+              quantity: {
+                bsonType: "int",
+                minimum: 1,
+                description: "must be an integer >= 1"
+              },
+              price: {
+                bsonType: "double",
+                minimum: 0,
+                description: "must be a non-negative number"
+              }
+            }
+          }
+        },
+        totalAmount: {
+          bsonType: "double",
+          minimum: 0,
+          description: "must be a non-negative number"
+        },
+        status: {
+          enum: ["Pending", "Shipped", "Completed", "Cancelled"],
+          description: "can only be one of the enum values"
+        },
+        createdAt: {
+          bsonType: "date",
+          description: "must be a valid date"
+        }
+      }
+    }
+  },
+  validationLevel: "strict",   // (off / moderate / strict)
+  validationAction: "error"    // (warn / error)
+});
+
+Notes : In details here in this case: 
+-------------------------------------------- >
+$jsonSchema → defines rules for documents.
+
+required → enforces mandatory fields.
+
+bsonType → MongoDB types (string, int, double, date, object, array, etc.).
+
+enum → restricts values to a fixed set.
+
+validationLevel: 
+strict → validates all inserts/updates.
+moderate → validates only inserts and updates that already have valid schema.
+
+validationAction:
+error → rejects invalid docs.
+warn → logs a warning but allows invalid docs.
+
+EX:1 
+BsonTypes:
+--------------- >
+String : enum 
+Double: "double",minimum/ maximum
+Integer: (int)
+Boolean (bool)
+Array  items: { bsonTypes: "string" }, "array"
+Object
+Date : "date"
+::Date 
+---------------------- >db.createCollection("Myinfo11",{
+  validator:{
+    $jsonSchema:{
+      bsonType:"object",
+      required:["name","age","vote"],
+      title:"Myinfo validation for the project1",
+      properties:{
+        name:{
+          bsonType: "string",
+          description: "Name must be an string."
+        },
+        age: {
+          bsonType: "int",
+          minimum: 5,
+          maximum: 100,
+          description: "The must be in the integer only."
+        },
+        vote:{
+          bsonType: "string",
+          enum: [ "yes","no","nota" ],
+          description: "Vote must be yes , no, nota"
+        }
+      }
+    }
+  },
+  validationLevel:"strict"
+});
+
+1)  Find().pretty() → returns results in readable/indented format.
+db.Myinfo11.find().pretty();
+
+
+Condition here:  For updating an table were , we have already an table , and if we want to update  the validation for this we use the below command 
+----------------------------- >
+
+db.runCommand({
+  collMod: "Myinfo",
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["name", "age", "vote"],
+      properties: {
+        name: {
+          bsonType: "string",
+          description: "must be a string and is required"
+        },
+        age: {
+          bsonType: "int",
+          minimum: 5,
+          maximum: 100,
+          description: "must be an int between 5 and 100"
+        },
+        vote: {
+          bsonType: "string",
+          enum: ["yes", "no", "nota"],
+          description: "must be yes, no, or nota"
+        }
+      }
+    }
+  },
+  validationLevel: "strict",
+  validationAction: "error"
+});
+
