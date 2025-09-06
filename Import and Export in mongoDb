@@ -1,0 +1,20 @@
+
+Importing the collection in Json in to the mongo db schema:
+
+
+mongoimport :Mongodb command line tool
+Database Tools 
+Syntax:  
+mongoimport "D:\students.json" -d school -c testing --jsonArray
+
+here in this line -d school  { data base name }
+
+{ -c testing this is the collection name } [optional ]
+If we donot gave him the collection name then it will consider the deafult file name
+in this case students.json
+
+mongoimport --version
+mongodump --version
+mongorestore --version
+
+mongoimport  "D:\Keka.json" -d hRDept --jsonArray
