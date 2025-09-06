@@ -1,1 +1,178 @@
+..> We can update here only one single row
+db.collection.updateOne({})
+
+..> We can update here many rows
+db.collection.updateMany({})
+
+db.collection.updateOne(
+ ...> filter { filed:"value"},
+ ...> updateValue  { $set :{updated_filed: "new_value"} }
+)
+
+EX-2:
+db.Myinfo11.updateOne(
+  { _id: ObjectId("68b9d5df03e8e4e68d060ee6") },   // filter
+  { $set: { name: "Sachinreddy" } }                // update
+)
+
+.........> If the _id is actually stored as a plain string then we need to use the :db.Myinfo11.updateOne(
+  { _id: "68b9d5df03e8e4e68d060ee6" },
+  { $set: { name: "Sachinreddy" } }
+)
+
+
+Issue :
+---------> 
+db.Myinfo11.updateOne(
+  {_id:ObjectId("68b9d5df03e8e4e68d060ee6")},
+  {$set:{name:"Sachinreddy1"}},
+  {$set:{age:34}}
+)
+Here this is not going to work , we can not use the two set operators in single UpdateOne()
+
+...> db.Myinfo11.updateOne(
+  { _id: ObjectId("68b9d5df03e8e4e68d060ee6") },
+  { 
+    $set: { 
+      name: "Sachinreddy1",
+      age: 34
+    }
+  }
+)
+
+EX-3:
+---------- >
+To update many fileds here in this 
+
+db.Myinfo11.updateMany(
+  {vote:"yes"
+  },
+  {$set:{age:19}}
+)
+
+response :
+------------- >
+{
+  acknowledged: true,
+  insertedId: null,
+  matchedCount: 2,
+  modifiedCount: 2,
+  upsertedCount: 0
+}
+
+=========================================================================================
+
+{skills: ["HTML", "Python", "JS" ]
+
+..> Here if i want to add somthing to this array  here in this case :
+$ push : Adds ann element to an Array  { In this case duplication can happens }
+$ pop : Removes the first or last element of an Array.
+$ pull : Removes all elements from an Array that match the query.
+$ addToSet : Adds distinct elements to an Array  
+# here first it checks in the arrays , if it is not there, then only its adds the element to teh arrays 
+#  Not allows any duplications
+
+EX-1:
+{
+  _id: ObjectId('68b9dbb203e8e4e68d060eeb'),
+  name: 'Banu',
+  age: 33,
+  school: 'banu1'
+}
+
+To increment an value here in this case :
+db.Myinfo22.updateMany(
+  { name: "Banu" },
+  { $inc: { age: 2 } }
+)
+
+To multiply an value here in this case:
+db.Myinfo22.updateOne(
+  {name:'Banu'},
+  {$mul: {age:2}}
+)
+
+To remove the complete an age filed for the Banu the we use :
+db.Myinfo22.updateOne(
+{name: 'Banu'},
+{ $unset :{age:""} }
+)
+
+To rename the fileds in the collections we use the $rename operator:
+db.MySkills.updateMany(
+  {},   // filter (empty means all documents)
+  { $rename: { "skills": "coding_skills" } }
+)
+
+To update the fields in the collection with an column here and with the todays date :
+db.MySkills.updateMany(
+{},
+{ $currentDate : { "lastModified":true } }
+);
+.> here currentDate this is the operator
+.> lastmodifeid field is the column name
+
+To update the fileds by using the min and max operator's:
+db.Myinfo22.updateOne{
+{name:"sachin"},
+{$min: {age:20} },
+);
+here the age field will be updated with the 20, if the real age filed value were having less then 20.
+here the min operator compares the old and new values , and and keeps which one is less , 
+
+db.Myinfo22.updateOne{
+{name:"sachin"},
+{$max: {age:90} }
+)
+here the max operator compares the old and new values , and and keeps which one is more  
+
+To add new elements to the array then we use the 
+,db.MySkills.updateOne(
+  {name:"Sachin"},
+  {$push:{"my_skills":"pyshco"}}
+) 
+
+To add new elements to the arrays but, previously if it is not available then it will be added , 
+or else it will be ignored.
+db.MySkills.updateOne(
+  {name:"Sachin"},
+  {$addToSet:{"my_skills":"Generative_Ai"}}
+)
+
+To delete the elements from the Array, we use the pop
+db.MySkills.updateOne(
+{ name: "Sachin" },
+{ $pop: { "my_skills": [ here we can use 1, -1]} }
+);
+if i use 1 then it iwll delete last element .
+If i use -1 tehn it will delete first element
+
+
+To delete an particular elemet from the array then we use the
+$pull 
+db.MySkills.updateOne(
+{name: "ramu"},
+{$pull :{"my_skills":"nuva" }}
+)
+
+To delete multiple element from teh array we use this 
+$pullAll
+db.MySkills.updateOne(
+{ name: "Sachin" },
+{ $pullAll : {"my_skills": ["js","Ai"] } }
+)
+
+To replace  complete row with out chaning the object id we use the 
+$replace
+db.MySkills.replaceOne(
+{name:"Sachin"},
+{ my_skills : ['Js','Pyshco' ] } ,
+{age:45}
+)
+
+db.MySkills.replaceOne(
+  { _id: ObjectId('68bbd6f53eae97df318cbe72') },   // filter
+  { my_skills: ["JS-1", "HINDI-1"], age: 90 }      // replacement
+)
+
 
