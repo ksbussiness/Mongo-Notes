@@ -1,1 +1,30 @@
+.> MongoDB  is  a NoSql (Non relational) Database.
 
+.> It stores data ia a type of JSON format called BSON.
+
+.>deleteOne() :
+db.collection_name.deleteOne(  ..> filter  { field1:"Value" } );
+
+Note : If with this filter if it founds many object then it will delete the first One 
+
+
+.>deleteMany() :
+db.collection_name.deleteMany( { field1 :"Value" } );
+
+Note : If the filter matches here for many cases then that values will be deleted.
+ 
+# To delete the all teh collection data then we use the :
+db.collection_name.deleteMany( { } );
+
+
+// ✅ Delete one document
+  await MyModel.deleteOne({ name: "Sachin" });
+
+  // ✅ Delete many
+  await MyModel.deleteMany({ status: "inactive" });
+
+  // ✅ Find one and delete (returns the deleted doc)
+  await MyModel.findOneAndDelete({ name: "Sachin" });
+
+  // ✅ Find by ID and delete
+  await MyModel.findByIdAndDelete("64ae8c3c7db22b94a3ef1234");
