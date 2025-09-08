@@ -1,1 +1,20 @@
+============================= ============================= 
+$ eq : Values are equal  { "age": { $eq: 20 }}   |||  { class : { $ne:"BCA" } } 
+$ ne : Values are not equal { "age" : { $ne: 20 }}
+$ gt :  Values is greather than another value  {"age" :{$gt:20 }}
+
+$ gte :  Values is greather than or equal to another value  {"age" : { $gte:20 } }
+
+$ lt :  Values is lesser than another value  {"age" : { $lt :20 }}
+
+$ lte :  Values is lesser than or equal to  another value  {"age" : { $lt: 20 }}
+
+$in : Values in matched within an array { "age": { $in : [ 20, 30, 34 ] } }
+
+$nin : Values is not  matched within an array { "age": { $ nin : [ 20, 39 ,34 ] } }
+
+db.students.updateMany(
+{ age: { $lt:20 } } ,
+{ $set : {class : "12th " } } 
+);
 
