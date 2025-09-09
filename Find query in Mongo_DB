@@ -1,1 +1,55 @@
+Reading the documents form the DB:
+
+db.collection_ name.find({})
+
+
+db.collection_ name.find({
+field : condition [ filter condition ]
+})
+
+
+To find one :
+db.collection_name.findOne( { class:"Btech" } );
+
+db.collection_name.findOne( { age: { $ lt: 23 } } );
+..> This findOne will get us only first record from the matched one's.
+
+
+db.collection_name.find(
+ # filter {field:"value" }
+ # projection { filed1:1, field2:1, field3:0  } 
+)
+
+db.collection_name.find().projection( { field1:1, field2:1, field3: 0 } );
+# One way of writing the projection:
+db.Myinfo22.find( {name:"Manu"} ).projection( { school:1,name:1 } );
+
+# Another way of writing the projection:
+db.Myinfo22.find( {name:"Manu"} ,{ school:1,name:1 } );
+
+# To get the no of records of the order we use the 
+db.collection_name.find( ).count( );
+
+
+# To sort the data after fetching from the db:
+db.Myinfo22.find( {school:"MVS"} ).sort( { name:1 } );
+here under the sort functionality we can use the 
+ 1 : for Ascending order
+-1 :  for Descending order
+
+
+# To show the limited number of the recored we use the : limit:
+db.collection_name.find().limit(3)
+...> To get the data which is limited to 3 from the 1000 recored's
+
+# To get the data after the specified no of  field's  that to limit specif fields only then we use :
+db.collection_name.find().limit(3).skip(3) 
+...> Here we get the data for the 4,5,6 fields
+
+
+# To get the data from the db 
+db.collection.find( { } ,{ name : 1 , age : 1} ).sort( { name :-1 } ) ;
+{ } ...> query filter 
+{ name:1 } ..> projection 
+.sort() 
 
