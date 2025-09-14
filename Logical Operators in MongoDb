@@ -1,1 +1,56 @@
 
+Logical Operators in MongoDb:
+
+$and: 
+---------- >
+..> Returns docyuments where both queries match.
+Syntax:  { $and : [condition1,condition2] }
+
+db.collections_name.find( {filed1:"Value });
+
+{"age": { $lt:20 }} + {"city:"Delhi" }
+{"age" : {$gt:20 }} + {"age" :{$lt:30 }}
+
+ex: db.MySkills.find({
+  $and:[ { "age":{$gt:40}}]
+})l
+
+$or
+-------- >
+Returns documents where either query matches.
+
+Syntax: { $or : [condition1,cpnditions2 ] }
+
+Ex:db.MySkills.find({
+  $or:[ { "age":{$gt:40}},{"name":{$eq:"sai"}}]
+})
+
+$nor:
+----------- >
+Returns documents where both queries fail to match.
+
+Syntax : { $nor : [conditions1, conditions2 ] }
+
+Ex:db.MySkills.find({
+  $nor:[ { "age":{$gt:40}},{"name":{$eq:"sai"}}]
+})
+
+$not :
+--------- .
+Returns documents where the query does not match.
+
+Syntax: { $not : [ condition ] }
+ 
+Ex:
+db.MySkills.find(
+   { "age":{$not:{$gt:80}}}
+)
+
+Note: here we can use these logical operators using the delete , update only here in this case :
+
+
+db.MySkills.find({
+  $and:[ { "age":{$gt:40}}]
+})
+
+
