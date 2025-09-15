@@ -1,1 +1,42 @@
 
+Element Operatprs in mongoDB:
+---------------------------------------- >
+
+db.collection_name.find( { field:"value " } );
+
+$ exists : Matches documenst that have the specified field.
+{field :{ $exists :  <boolean > } }
+                              True 
+                              False
+.> simply here i need all the data where from the collections / rows where age filed exists 
+
+EX-1 : db.MySkills.find({age:{$exists:true}});
+EX-2 : db.MySkills.find({age:{$exists:false}})
+
+
+$ type  : Select  documents if a field is of the specified type.
+{ field : { $type: < type > } }
+                           dataType.
+.> simple here i need all the data where from the rows if the age type is integer.
+
+EX-1: db.MySkills.find({name:{$type:"strin;g" }}) ;
+EX-2 : db.MySkills.find({age:{$type:"int"}})  ;
+
+To check for the multiple data types for the particukar filedds we use here array :
+EX-3:  db.MySkills.find({age:{$type:["int","string"]}});
+
+The data types which we can pass here in this case:
+String
+Double
+32-bit-Integer
+64-bit-Integer
+Boolean
+Array
+Object 
+Null
+Regular Expression
+TimeStamp
+Date
+ObjectId
+
+
