@@ -1,0 +1,188 @@
+mongo-db credentials:
+
+Name: sachinreddy9100@gmail.com
+First Name: Sachin 
+Last Name: Reddy
+Pass: #,Sachin:]@123
+
+
+
+Resources:
+--------------- >
+https://medium.com/@farihatulmaria/how-to-design-efficient-schemas-in-mongodb-for-highly-scalable-applications-69e616725d32
+
+
+Schema Design Optimisation:
+------------------------------ >
+
+
+#### ####### SINGLE COLLECTIONS MODEL PATTERN ####### ####
+
+# Single collection model pattern :
+.> Single collection pattern groups the related documents of different types into a single collection.
+.> It is used to modelling many-to-many relationships when embedding documents not an options.
+.> This will avoid more lookups, and multiple queries, to read non embedded related documents.
+
+
+used to modelling :
+.> Many to many relationships.
+.> One to Many Relationsships.
+.> catalog of the product items.
+pros: To avoid $lookup options. [expensive ]
+
+we have the different types use cases for implementing the single collections :
+variant 1: {{ Many to Many RelationShip }}
+.> Array of references
+.> we can use the "docType", relatedTo array field in every collection to easily retrieve the data.
+.> relatedTo field which is an array of references to related documents
+
+EX:
+We have the 3 collections
+step:1 To apply to the single collections pattern we need to apply the :docType to the each collections.
+here we can making these 3 collections in to an comman collections called Books_Catalog collections.
+users,                   			books,                     reviews
+us_id                   		 	 bo_id                      re_id
+docType:'users'         		  	 docType:'books'            doctype:'review'
+relatedTo: [202356]            		 	 relatedTo: [202356]        relatedTo: [202356]
+
+setp2: Apply and index to the relatedTo filed
+db.books.catalog.createIndex({ relatedTo:1 });
+
+
+examples queries:
+db.books.catalog.find({ "relatedTo":202356, "docType": "review"});
+
+
+
+
+variant 2:  {{ One to Many RelationShip }}
+.> we can use the Overloaded field 
+
+step : 1
+----------->
+.> consider here if we want to model the relations ships to 
+
+here in this case iamusing two different models books, reviews and making the common : books_catalog
+books:                            reviews:
+bo_id :202356                       rs_id :367
+sc_id :202356                       sc_id : 202356/367
+
+step : 2
+--------->
+create an index
+db.books.catalog.createIndex({ sc_id:1 });
+
+
+example query :
+db.books.catalog.find({ "sc_id":{'$regex': "^202356" } });
+
+
+#### ####### SUBSET MODEL PATTERN ####### ####
+
+subset pattern :
+------------------ >
+.> 
+
+consider a situation where :
+we an books we for this books, if we have the thousand of reviews then: but we need to show only he first 3 only , but the other reviews will take up memory which impacts the memory.
+
+...> To run the quires quickly mongoDB in build memory wiredTiger engine keeps data in the InMemory.
+...> This inMemory has WT internal cache.
+...> And the index's data and frequently used data will be kept in the WT Internal Cache.
+...> The data base performance will impacted by the size of the WT cache. { if the cache is more then performance is less }
+..> So their comes the Subset Patterns:
+
+Subset patterns :
+.> It will reduces size 
+.> relocate data that is not frequently accessed.
+
+When to use the Subset Patterns:
+.> Large number of embedded documents. [ like reviews, comments, likes etc ]
+.> and but only small subsets of documents are used by application.
+.> 
+
+{ 'reviews':{'$slice': ['$reviews',3 ] } }
+
+
+
+#### ####### BUCKET MODEL PATTERNS  ####### ####:
+
+..> In the bucket model, we group pieces of information's, into buckets.
+..> Mainly used for the sensor data, I mean for storing the wearable devices data.
+.> keeps document size, predictable.
+.> read only data that we need.
+.> reduce number of documents in collections.
+.> Improve index performance.
+
+
+#### ####### OUTLINER MODEL PATTERNS ####### ####:
+..> 
+
+CReadly@123#
+
+
+db.reviews.updateMany(
+{
+"comments.3": {$exits:true } 
+},
+{
+$set : {outlier: true }
+}
+);
+
+
+
+
+
+#### ####### archieve MODEL PATTERNS ####### ####:
+.> The archive pattern helps us to use the move data that is no longer or rarely used outside of the  main database to avoid performance degradations.
+.> 
+
+
+
+SCALE YOUR MODEL DATA:
+----------------------- >
+# Embedding and Referencing in a Shared Environment:
+ @  why sharding ?
+
+1) data set grows too large.
+2) Read and Write operations are too intensive for a  single server.
+3) Requires better distribution and performance across multiple servers.
+4) 
+
+
+
+
+
+
+Sharding : horizontal scaling:
+.> It is an process of distributing data across multiple servers, called shards.
+here each SHARD contains the different set of data, the amount of data that each shard needs to get will determine by the sharding key.
+.> shard key : It is an single index fields {userId:1}  or multiple index filed { userId:1, orderDate:1 } 
+.> We will create the shard key's and mongodb  will chooses the chunks.
+.> One the chunks are decided then they are evenly distributted across the shards.
+
+we have the two stratege to work on here in this case:
+1) Embed : In this the parent Document has itself the child docs 
+2) Reference : In this we have the parent Doc, and all the child docs will be referenced to the parent doc.
+.> Data is distributed differently across shards if we embed or reference.
+
+when to use the embed:?
+------------------------------ >
+.> Embed data that is frequently accessed together.
+.> Reduce complex joins and improve read performance.
+
+
+when to use the reference:?
+----------------------------- >
+.> Reference is related data is accessed independently.
+.> It can also help avoid bloated documents and unbounded arrays.
+
+
+
+
+Data Modeling Considerations for Horizontal Scaling:
+--------------------------------------------------------- >
+.>
+
+
