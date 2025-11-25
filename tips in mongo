@@ -1,0 +1,6 @@
+
+========================================
+In MongoDB:
+null is a valid value and is considered equal to another null in unique indexes.
+So, multiple documents with null in the same fields (that are part of a unique index) will conflict.
+
