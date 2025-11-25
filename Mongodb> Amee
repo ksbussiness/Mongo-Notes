@@ -1,0 +1,121 @@
+
+Mongoose is a JavaScript library that provides a solution for interacting with MongoDB.
+
+..> It is not a framework, but rather an Object Data Modeling (ODM) library.
+
+..> Mongoose allows you to model your data, define schemas, and interact with MongoDB through an easier API.
+
+..> Key Features of Mongoose:
+Schema Definition: Mongoose allows you to define the structure (schema) of your MongoDB documents. For example, you can define what fields are required, their data types, and any validation rules.
+
+Modeling: Mongoose helps you create models based on schemas, which are used to interact with MongoDB collections. A model represents a collection and provides methods for CRUD operations.
+
+Validation: Mongoose allows you to apply validation rules to data before it's saved in the database, ensuring that the data meets certain criteria (e.g., required fields, data types).
+
+Querying: Mongoose provides a powerful query API to interact with MongoDB. You can perform operations like finding, updating, or deleting documents using its easy-to-use syntax.
+
+Middleware (Hooks): Mongoose allows you to define middleware (pre or post hooks) to run code at specific points during the lifecycle of a document (e.g., before saving a document, after updating).
+
+
+..> Built-in Methods: It provides built-in methods for common database operations (e.g., .save(), .find(), .update(), etc.), so you don't have to write as much low-level code.
+
+
+BSON (Binary JSON ) 
+
+..> BSON stands for Binary JSON (JavaScript Object Notation).
+
+..>  BSON is a binary format used by MongoDB to store documents efficiently.
+
+..>  BSON allows MongoDB to store data in a compact, efficient format for both storage and query performance.
+
+..> 
+
+JSON is a plain text format, making it easy for humans to read and write.
+BSON is a binary format, which makes it more efficient for storage and transmission but harder for humans to directly read.
+
+
+
+
+
+SCHEMA: to define which properties need to be present in the each documents, we define the SCHEMA
+
+..> in a row data items need to be present all are defined in the schema:
+
+...> in mongoose  we have a class called schema.it will take document structure obj has a argument.it will return SCHEMA OBJECT.
+
+...> To create the model mongoose provide a method called MODEL. 
+.> It will take two arguments
+ model name
+schema object
+
+...> model is used to store and retrieve the data .
+
+..> Use the model to create, read, update, and delete user records.
+
+..> mongoose.connect("mongodb://127.0.0.1:27017/demo")
+It accepts a connection string (URL) as an argument, which specifies the MongoDB server's location and which database to connect to.
+
+..> This method returns a Promise, so it can be used with .then() or async/await for handling the success or failure of the connection.
+
+..> 127.0.0.1 {an IP address of the server where the mongoDB database hosted }
+
+.> 127.0.0.1 is the loopback address, which refers to the local machine (localhost). It means that the MongoDB server is running on the same machine where the Node.js application is executing.
+
+
+..> 27017 { his is the default port number that MongoDB listens to. MongoDB typically uses port 27017 for database connections. }
+
+..> demo { f you don't specify a database name, MongoDB will attempt to connect to a database named test by default.
+}
+
+
+CULTER :
+-------------------->
+A MongoDB Cluster is a group of MongoDB servers (called nodes) working together to handle large amounts of data .
+
+
+..> And provide high availability and reliability. Instead of having just one server holding all your data, a cluster distributes the data across multiple servers.
+
+Why is a MongoDB Cluster Used?
+
+..> Scalability:
+
+Scaling means handling more data and traffic without slowing down the system.
+.> A cluster allows MongoDB to split the data across multiple servers, so it can handle more data and users. When your data grows, you can add more servers to the cluster.
+
+.> High Availability:
+
+If one server in the cluster fails, other servers can take over, ensuring your database remains available.
+
+.> This is called replication. MongoDB keeps multiple copies of data across different servers in the cluster to make sure the system keeps running even if one server goes down.
+
+Types of Clusters in MongoDB:
+-------------------------------->
+Sharded Cluster:
+
+Used to handle very large datasets by splitting the data across multiple servers (called shards).
+
+.> MongoDB decides which data goes to which server based on a shard key.
+
+
+Replica Set:
+
+.> A group of servers that maintain the same data, ensuring that if one server goes down, another server can take over.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
